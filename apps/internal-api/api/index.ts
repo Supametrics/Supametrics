@@ -1,17 +1,20 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
+import auth from "../handlers/auth";
+import type { AuthType } from "../lib/auth";
 
 export const config = {
   runtime: "edge",
 };
 
-const app = new Hono().basePath("/api");
+const app = new Hono<{ Variables: AuthType }>().basePath("/api");
 
 app.get("/", (c) => {
   return c.json({ message: "Hello from Hono!" });
 });
 
-const v1 = new Hono();
+// /api/v1 routes
+const v1 = new Hono<{ Variables: AuthType }>();
 
 v1.get("/health", (c) => {
   return c.json({
@@ -19,6 +22,8 @@ v1.get("/health", (c) => {
     message: "API is healthy",
   });
 });
+
+v1.route("/auth", auth);
 
 app.route("/v1", v1);
 
