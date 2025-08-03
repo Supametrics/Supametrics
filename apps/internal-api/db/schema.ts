@@ -14,7 +14,7 @@ export const users = pgTable("users", {
   uuid: uuid("uuid").defaultRandom().notNull().unique(),
 
   email: text("email").notNull().unique(),
-  hashedPassword: text("hashed_password").notNull(),
+  password: text("password").notNull(),
 
   emailVerified: boolean("email_verified").default(false),
   isMobileVerified: boolean("mobile_verified").default(false),
