@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
 import { users } from "../db/schema";
+import { signUpSchema } from "./zod";
 
 type OnSignupContext = {
   user: { id: string };
@@ -36,7 +37,14 @@ export const auth = betterAuth({
       const agent = request.headers.get("user-agent") || "";
 
       const body = await request.json().catch(() => ({}));
-      const fullName = body.fullName || null;
+      const parsed = signUpSchema.safeParse(body);
+
+      if (!parsed.success) {
+        console.error("Invalid onSignup body", parsed.error.format());
+        return;
+      }
+
+      const { fullName } = parsed.data;
 
       await db.user.update({
         where: { id: user.id },
