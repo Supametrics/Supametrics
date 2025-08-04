@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import auth from "../handlers/auth";
 import type { AuthType } from "../lib/auth";
+import { withAuth } from "../middleware/session";
 
 export const config = {
   runtime: "edge",
@@ -15,6 +16,9 @@ app.get("/", (c) => {
 
 // /api/v1 routes
 const v1 = new Hono<{ Variables: AuthType }>();
+
+// Apply middleware
+v1.use("*", withAuth);
 
 v1.get("/health", (c) => {
   return c.json({

@@ -18,7 +18,7 @@ export const roadmap = {
       tasks: [
         "Email/password auth with JWT + refresh tokens",
         "OAuth (Google, GitHub, etc.)",
-        "Role-based access control (user, admin, super admin)",
+        "Role-based access control (user, admin, superadmin)",
         "User plan enforcement (free, paid, enterprise)",
         "Sessions management (revoke, list, expire)",
         "Account restriction (e.g. suspended, read-only)",
@@ -28,7 +28,8 @@ export const roadmap = {
     {
       phase: "Phase 2: Core Features",
       tasks: [
-        "Create/update/delete teams",
+        "Create/read/update/delete projects",
+        "Create/read/update/delete teams",
         "Invite users to team",
         "Assign roles within a team (owner, member, viewer)",
         "Create/update/delete projects per team",
@@ -48,7 +49,7 @@ export const roadmap = {
     {
       phase: "Phase 4: Admin Capabilities",
       tasks: [
-        "Impersonate user (super admin only)",
+        "View user log (super admin only)",
         "Suspend/restrict user accounts",
         "Audit log access",
         "System metrics dashboard",
@@ -63,65 +64,6 @@ export const roadmap = {
       ],
     },
   ],
-
-  endpoints: {
-    prefix: "/api/v1",
-    auth: [
-      "POST   /auth/register",
-      "POST   /auth/login",
-      "POST   /auth/oauth/google",
-      "POST   /auth/oauth/github",
-      "POST   /auth/logout",
-      "POST   /auth/refresh-token",
-      "GET    /auth/me",
-      "GET    /auth/sessions",
-      "DELETE /auth/sessions/:sessionId",
-    ],
-    users: [
-      "GET    /users/me",
-      "PATCH  /users/me",
-      "DELETE /users/me (soft delete)",
-      "GET    /users/:id (admin/super-admin)",
-      "PATCH  /users/:id (admin/super-admin)",
-      "DELETE /users/:id (admin/super-admin)",
-      "POST   /users/:id/suspend (admin/super-admin)",
-      "POST   /users/:id/restore",
-    ],
-    teams: [
-      "POST   /teams",
-      "GET    /teams",
-      "GET    /teams/:id",
-      "PATCH  /teams/:id",
-      "DELETE /teams/:id",
-      "POST   /teams/:id/invite",
-      "POST   /teams/:id/remove-member",
-      "PATCH  /teams/:id/role",
-    ],
-    projects: [
-      "POST   /projects",
-      "GET    /projects",
-      "GET    /projects/:id",
-      "PATCH  /projects/:id",
-      "DELETE /projects/:id",
-      "POST   /projects/:id/api-keys",
-      "DELETE /projects/:id/api-keys/:keyId",
-    ],
-    plans: [
-      "GET    /plans",
-      "POST   /billing/subscribe",
-      "POST   /billing/change-plan",
-      "POST   /billing/cancel",
-      "GET    /billing/usage",
-    ],
-    admin: [
-      "GET    /admin/users",
-      "GET    /admin/projects",
-      "GET    /admin/teams",
-      "POST   /admin/impersonate/:userId",
-      "GET    /admin/logs",
-      "GET    /admin/stats",
-    ],
-  },
 
   middleware: [
     "authMiddleware - Verifies JWT or session token",

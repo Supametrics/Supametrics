@@ -1,20 +1,15 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
-import { users } from "../db/schema";
-import { signUpSchema } from "./zod";
-
-type OnSignupContext = {
-  user: { id: string };
-  db: any;
-  request: Request;
-};
+import * as authSchema from "../db/auth-schema";
+import { admin } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
-      ...users,
+      ...authSchema,
+      user: authSchema.user,
     },
   }),
   trustedOrigins: ["http://localhost:3000"],
@@ -31,37 +26,10 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
-  events: {
-    async onSignup({ user, db, request }: OnSignupContext) {
-      const ip = request.headers.get("x-forwarded-for") || "";
-      const agent = request.headers.get("user-agent") || "";
-
-      const body = await request.json().catch(() => ({}));
-      const parsed = signUpSchema.safeParse(body);
-
-      if (!parsed.success) {
-        console.error("Invalid onSignup body", parsed.error.format());
-        return;
-      }
-
-      const { fullName } = parsed.data;
-
-      await db.user.update({
-        where: { id: user.id },
-        data: {
-          role: "user",
-          ipAddress: ip,
-          userAgent: agent,
-          fullName,
-        },
-      });
-
-      // TODO: send welcome email, etc
-    },
-  },
+  plugins: [admin()],
 });
 
 export type AuthType = {
-  user: typeof auth.$Infer.Session.user | null;
+  user: (typeof auth.$Infer.Session.user & { uuid: string }) | null;
   session: typeof auth.$Infer.Session.session | null;
 };
