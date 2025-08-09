@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 
-import type { AuthType } from "../lib/auth.ts";
-import { withAuth } from "../middleware/session.ts";
+import type { AuthType } from "./lib/auth.ts";
+import { withAuth } from "./middleware/session";
 
 // Route handlers
-import auth from "../handlers/auth.ts";
-import projects from "../handlers/projects.ts";
-import teams from "../handlers/teams.ts"; 
+import auth from "./handlers/auth";
+import projects from "./handlers/projects";
+import teams from "./handlers/teams";
 
 // Base app
 const app = new Hono<{ Variables: AuthType }>().basePath("/api");

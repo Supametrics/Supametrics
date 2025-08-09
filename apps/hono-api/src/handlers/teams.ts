@@ -1,10 +1,10 @@
 import { Hono } from "hono";
-import { db } from "../db.ts";
-import { teams, teamMembers, teamInvites } from "../db/schema.ts";
-import { user } from "../db/auth-schema.ts";
+import { db } from "../db";
+import { teams, teamMembers, teamInvites } from "../db/schema";
+import { user } from "../db/auth-schema";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
-import { getUserOrThrow } from "../lib/project-helpers.ts";
+import { getUserOrThrow } from "../lib/project-helpers";
 
 const teamRoutes = new Hono();
 

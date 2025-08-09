@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { auth } from "../lib/auth.ts";
-import type { AuthType } from "../lib/auth.ts";
+import { auth } from "../lib/auth";
+import type { AuthType } from "../lib/auth";
 
 const authHandler = new Hono<{ Bindings: AuthType }>({
   strict: false,

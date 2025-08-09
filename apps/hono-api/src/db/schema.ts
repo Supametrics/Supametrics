@@ -11,7 +11,7 @@ import {
   pgEnum,
   unique,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth-schema.ts";
+import { user } from "./auth-schema";
 
 // Enums
 export const teamRoleEnum = pgEnum("team_role", ["owner", "member", "viewer"]);

@@ -1,19 +1,19 @@
 import { Hono } from "hono";
-import { db } from "../db/index.ts";
-import { projectApiKeys, projectMembers, projects, teams } from "../db/schema.ts";
-import { user } from "../db/auth-schema.ts";
+import { db } from "../db";
+import { projectApiKeys, projectMembers, projects, teams } from "../db/schema";
+import { user } from "../db/auth-schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { createProjectSchema } from "../lib/zod.ts";
-import { slugifyProjectName } from "../lib/slugify.ts";
-import { generateApiKeys, getPaginationParams } from "../lib/utils.ts";
+import { createProjectSchema } from "../lib/zod";
+import { slugifyProjectName } from "../lib/slugify";
+import { generateApiKeys, getPaginationParams } from "../lib/utils";
 import {
   getUserOrThrow,
   getProjectOrThrow,
   getProjectMembership,
   isOwnerOrAdmin,
-} from "../lib/project-helpers.ts";
-import { AuthType } from "../lib/auth.ts";
+} from "../lib/project-helpers";
+import { AuthType } from "../lib/auth";
 
 
 const projectRoutes = new Hono<{ Variables: AuthType }>();

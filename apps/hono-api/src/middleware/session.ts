@@ -1,5 +1,5 @@
 import { MiddlewareHandler } from "hono";
-import { auth } from "../lib/auth.ts";
+import { auth } from "../lib/auth";
 
 export const withAuth: MiddlewareHandler<{
   Variables: {
