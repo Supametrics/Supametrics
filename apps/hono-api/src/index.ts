@@ -19,11 +19,15 @@ const v1 = new Hono<{ Variables: AuthType }>().basePath("/api/v1");
 
 v1.use("*", withAuth);
 
-v1.get("/health", (c) => {
+v1.get("/health", (c) => { 
   return c.json({
     message: "Server is healthy!",
   });
 });
+
+v1.route("/auth", auth);
+v1.route("/projects", projects);
+v1.route("/teams", teams);
 
 app.route("/", v1);
 
