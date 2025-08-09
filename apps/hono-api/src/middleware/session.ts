@@ -1,4 +1,4 @@
-import { MiddlewareHandler } from "hono";
+import type { MiddlewareHandler } from "hono";
 import { auth } from "../lib/auth";
 
 export const withAuth: MiddlewareHandler<{

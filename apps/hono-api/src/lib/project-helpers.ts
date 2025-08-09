@@ -1,8 +1,8 @@
-import { Context } from "hono";
+import type { Context } from "hono";
 import { db } from "../db";
 import { projects, projectMembers } from "../db/schema";
 import { eq, and } from "drizzle-orm";
-import { AuthType } from "./auth";
+import type { AuthType } from "./auth";
 
 export async function getUserOrThrow(c: Context<{ Variables: AuthType }>) {
   const user = c.get("user");

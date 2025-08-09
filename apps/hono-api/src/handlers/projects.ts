@@ -13,7 +13,7 @@ import {
   getProjectMembership,
   isOwnerOrAdmin,
 } from "../lib/project-helpers";
-import { AuthType } from "../lib/auth";
+import type { AuthType } from "../lib/auth";
 
 
 const projectRoutes = new Hono<{ Variables: AuthType }>();
