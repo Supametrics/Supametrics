@@ -1,0 +1,131 @@
+Scope: all 8 workspace projects
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 2, reused 0, downloaded 0, added 0
+Progress: resolved 17, reused 0, downloaded 0, added 0
+Progress: resolved 26, reused 0, downloaded 0, added 0
+Progress: resolved 32, reused 0, downloaded 0, added 0
+Progress: resolved 36, reused 0, downloaded 0, added 0
+Progress: resolved 42, reused 0, downloaded 0, added 0
+Progress: resolved 48, reused 0, downloaded 0, added 0
+Progress: resolved 53, reused 0, downloaded 0, added 0
+Progress: resolved 57, reused 0, downloaded 0, added 0
+Progress: resolved 70, reused 0, downloaded 0, added 0
+Progress: resolved 72, reused 0, downloaded 0, added 0
+Progress: resolved 93, reused 0, downloaded 0, added 0
+Progress: resolved 125, reused 0, downloaded 0, added 0
+Progress: resolved 126, reused 0, downloaded 0, added 0
+Progress: resolved 147, reused 0, downloaded 0, added 0
+Progress: resolved 166, reused 0, downloaded 0, added 0
+Progress: resolved 180, reused 0, downloaded 0, added 0
+Progress: resolved 221, reused 0, downloaded 0, added 0
+Progress: resolved 247, reused 0, downloaded 0, added 0
+Progress: resolved 266, reused 0, downloaded 0, added 0
+Progress: resolved 311, reused 0, downloaded 0, added 0
+Progress: resolved 324, reused 0, downloaded 0, added 0
+ WARN  GET https://registry.npmjs.org/path-exists error (ECONNRESET). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 337, reused 0, downloaded 0, added 0
+Progress: resolved 414, reused 0, downloaded 0, added 0
+ WARN  GET https://registry.npmjs.org/electron-to-chromium error (ECONNRESET). Will retry in 10 seconds. 2 retries left.
+ WARN  GET https://registry.npmjs.org/is-core-module error (ECONNRESET). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 444, reused 0, downloaded 0, added 0
+ WARN  GET https://registry.npmjs.org/@types%2Fuse-sync-external-store error (ECONNRESET). Will retry in 10 seconds. 2 retries left.
+Progress: resolved 497, reused 0, downloaded 0, added 0
+Progress: resolved 506, reused 0, downloaded 0, added 0
+Progress: resolved 521, reused 0, downloaded 0, added 0
+Progress: resolved 528, reused 0, downloaded 0, added 0
+Progress: resolved 529, reused 0, downloaded 0, added 0
+Progress: resolved 536, reused 0, downloaded 0, added 0
+Progress: resolved 556, reused 0, downloaded 0, added 0
+Progress: resolved 602, reused 0, downloaded 0, added 0
+Progress: resolved 660, reused 0, downloaded 0, added 0
+Progress: resolved 684, reused 0, downloaded 0, added 0
+ WARN  2 deprecated subdependencies found: @esbuild-kit/core-utils@3.3.2, @esbuild-kit/esm-loader@2.6.5
+Progress: resolved 691, reused 0, downloaded 0, added 0
+
+Packages: +560
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 691, reused 5, downloaded 0, added 0
+Progress: resolved 691, reused 66, downloaded 0, added 0
+Progress: resolved 691, reused 174, downloaded 0, added 0
+Progress: resolved 691, reused 231, downloaded 0, added 0
+Progress: resolved 691, reused 293, downloaded 0, added 0
+Progress: resolved 691, reused 431, downloaded 0, added 0
+Progress: resolved 691, reused 459, downloaded 8, added 15
+Progress: resolved 691, reused 459, downloaded 13, added 33
+Progress: resolved 691, reused 459, downloaded 14, added 43
+Progress: resolved 691, reused 459, downloaded 14, added 46
+Progress: resolved 691, reused 459, downloaded 16, added 60
+Progress: resolved 691, reused 460, downloaded 19, added 64
+Progress: resolved 691, reused 460, downloaded 22, added 155
+Progress: resolved 691, reused 460, downloaded 23, added 178
+Progress: resolved 691, reused 460, downloaded 24, added 181
+Progress: resolved 691, reused 460, downloaded 26, added 205
+Progress: resolved 691, reused 460, downloaded 28, added 214
+Progress: resolved 691, reused 460, downloaded 29, added 228
+Progress: resolved 691, reused 460, downloaded 29, added 229
+Progress: resolved 691, reused 460, downloaded 32, added 240
+Progress: resolved 691, reused 460, downloaded 33, added 244
+Progress: resolved 691, reused 460, downloaded 35, added 244
+Progress: resolved 691, reused 460, downloaded 38, added 256
+Progress: resolved 691, reused 460, downloaded 39, added 256
+Progress: resolved 691, reused 460, downloaded 39, added 258
+Progress: resolved 691, reused 460, downloaded 42, added 273
+Progress: resolved 691, reused 460, downloaded 44, added 288
+Progress: resolved 691, reused 460, downloaded 45, added 322
+Progress: resolved 691, reused 460, downloaded 48, added 331
+Progress: resolved 691, reused 460, downloaded 48, added 347
+Progress: resolved 691, reused 460, downloaded 51, added 374
+Progress: resolved 691, reused 460, downloaded 56, added 400
+Progress: resolved 691, reused 460, downloaded 56, added 409
+Progress: resolved 691, reused 460, downloaded 61, added 437
+Progress: resolved 691, reused 460, downloaded 64, added 447
+Progress: resolved 691, reused 460, downloaded 66, added 455
+Progress: resolved 691, reused 460, downloaded 72, added 467
+Progress: resolved 691, reused 460, downloaded 73, added 469
+Progress: resolved 691, reused 460, downloaded 76, added 476
+Progress: resolved 691, reused 460, downloaded 76, added 481
+Progress: resolved 691, reused 460, downloaded 78, added 488
+Progress: resolved 691, reused 460, downloaded 81, added 490
+Progress: resolved 691, reused 460, downloaded 81, added 491
+Progress: resolved 691, reused 460, downloaded 81, added 495
+Progress: resolved 691, reused 460, downloaded 81, added 496
+Progress: resolved 691, reused 460, downloaded 81, added 497
+Progress: resolved 691, reused 460, downloaded 81, added 499
+Progress: resolved 691, reused 460, downloaded 81, added 500
+Progress: resolved 691, reused 460, downloaded 81, added 501
+Progress: resolved 691, reused 460, downloaded 81, added 503
+Progress: resolved 691, reused 460, downloaded 82, added 505
+Progress: resolved 691, reused 460, downloaded 82, added 506
+Progress: resolved 691, reused 460, downloaded 82, added 508
+Progress: resolved 691, reused 460, downloaded 83, added 508
+Progress: resolved 691, reused 460, downloaded 83, added 519
+Progress: resolved 691, reused 460, downloaded 83, added 520
+Progress: resolved 691, reused 460, downloaded 84, added 529
+Progress: resolved 691, reused 460, downloaded 84, added 531
+Progress: resolved 691, reused 460, downloaded 85, added 543
+Progress: resolved 691, reused 460, downloaded 85, added 544
+Progress: resolved 691, reused 460, downloaded 85, added 545
+Progress: resolved 691, reused 460, downloaded 85, added 547
+Progress: resolved 691, reused 460, downloaded 85, added 548
+Progress: resolved 691, reused 460, downloaded 85, added 549
+Progress: resolved 691, reused 460, downloaded 85, added 550
+Progress: resolved 691, reused 460, downloaded 85, added 552
+Progress: resolved 691, reused 460, downloaded 85, added 553
+Progress: resolved 691, reused 460, downloaded 85, added 554
+Progress: resolved 691, reused 460, downloaded 86, added 554
+Progress: resolved 691, reused 460, downloaded 86, added 555
+Progress: resolved 691, reused 460, downloaded 87, added 555
+Progress: resolved 691, reused 460, downloaded 88, added 556
+Progress: resolved 691, reused 460, downloaded 88, added 557
+Progress: resolved 691, reused 460, downloaded 89, added 557
+Progress: resolved 691, reused 460, downloaded 90, added 557
+Progress: resolved 691, reused 460, downloaded 90, added 558
+Progress: resolved 691, reused 460, downloaded 90, added 559
+Progress: resolved 691, reused 460, downloaded 90, added 560
+Progress: resolved 691, reused 460, downloaded 90, added 560, done
+. postinstall$ patch-package
+. postinstall: patch-package 8.0.1
+. postinstall: Applying patches...
+. postinstall: No patch files found
+. postinstall: Done
+Done in 3m 19s using pnpm v10.5.2

@@ -1,17 +1,10 @@
 import { NextResponse } from "next/server";
 
-// ========================
-// Types
-// ========================
 type FrequencyItem = {
   time: string;
   totalVisits: number;
   uniqueVisitors: number;
 };
-
-// ========================
-// Frequency Generators
-// ========================
 
 // Generate hourly data (e.g. last 24 hours)
 const generateHourlyFrequency = (hours: number = 24): FrequencyItem[] => {
@@ -122,14 +115,11 @@ const generateYearlyFrequency = (months: number = 12): FrequencyItem[] => {
   return frequency;
 };
 
-// ========================
-// Main Handler
-// ========================
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
   const { searchParams } = new URL(request.url);
   const range = searchParams.get("range") || "month"; // default = hourly
 
