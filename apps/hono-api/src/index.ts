@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 
 import { withAuth } from "./middleware/session.js";
 import { rateLimiter } from "./middleware/rate-limiter.js";
@@ -17,6 +18,8 @@ import sessionHandler from "./handlers/session.js";
 import profileRoute from "./handlers/profile.js";
 
 const app = new Hono<{ Variables: AuthType }>({});
+
+app.use("*", logger());
 
 app.notFound((c) => {
   return c.json({ error: "Not Found - Visit supametrics.com" }, 404);
@@ -41,7 +44,7 @@ v1.use(
     ],
     allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
-  })
+  }),
 );
 
 // Health check
@@ -84,5 +87,5 @@ serve(
   },
   (info) => {
     console.log(`Server is running on http://localhost:${info.port}`);
-  }
+  },
 );

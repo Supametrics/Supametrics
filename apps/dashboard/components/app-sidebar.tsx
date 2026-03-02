@@ -30,7 +30,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     uuid: "personal",
     name: "My Workspace",
     logo: {
-      src: `https://avatar.vercel.sh/${user?.email}`,
+      src: `https://avatar.idolo.dev/${user?.email}`,
       alt: "My Workspace",
     },
     subscriptionType: user?.subscriptionType ?? "free",
@@ -44,7 +44,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         uuid: team.uuid,
         name: team.name,
         logo: {
-          src: `https://avatar.vercel.sh/${team.uuid}`,
+          src: `https://avatar.idolo.dev/${team.uuid}`,
           alt: team.name,
         },
         subscriptionType: user.subscriptionType ?? "free",
@@ -64,7 +64,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Activity", url: "/activity", icon: Activity },
       { title: "AI", url: "/ai", icon: Sparkle },
-      { title: "Support", url: "/contact", icon: LifeBuoy },
+      { title: "Support", url: "mailto:hello@idolo.dev", icon: LifeBuoy },
     ],
     navMain: [
       {

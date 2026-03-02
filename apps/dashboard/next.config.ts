@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "avatar.idolo.dev",
+        pathname: "/*",
+      },
+      {
+        protocol: "https",
         hostname: "icons.duckduckgo.com",
         pathname: "/ip3/*",
       },

@@ -65,7 +65,8 @@ export const Header = ({
               ) : (
                 <Image
                   src={`https://icons.duckduckgo.com/ip3/${cleanUrl(
-                    url || "https://supametrics.vercel.app"
+                    url || "https://supametrics.vercel.app",
+                    false,
                   )}.ico`}
                   className="w-3 h-3 rounded-sm"
                   width={16}
@@ -77,7 +78,14 @@ export const Header = ({
               {loading ? (
                 <Skeleton className="h-4 w-32" />
               ) : (
-                cleanUrl(url || "https://example.com")
+                <a
+                  target="_blank"
+                  rel="noreferrer"
+                  href={url}
+                  className="truncate"
+                >
+                  {cleanUrl(url || "https://example.com")}
+                </a>
               )}
             </div>
             |
@@ -87,7 +95,7 @@ export const Header = ({
                   "w-2 h-2 rounded-full animate-pulse",
                   onlineVisitors && onlineVisitors > 0
                     ? "bg-green-500"
-                    : "bg-gray-400"
+                    : "bg-gray-400",
                 )}
               />
               {loading ? (
@@ -105,9 +113,9 @@ export const Header = ({
             </SelectTrigger>
             <SelectContent>
               {filters.map((f) => {
-                const isLocked = ["thisyear", "last3years"].includes(
-                  f.timerange
-                );
+                const isLocked =
+                  ["thisyear", "last3years"].includes(f.timerange) &&
+                  user?.subscriptionType === "free";
                 return (
                   <SelectItem
                     key={f.timerange}

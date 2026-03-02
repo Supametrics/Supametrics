@@ -41,7 +41,7 @@ export const NewProjectForm = () => {
   };
   const mappedTeams =
     user?.teams?.map((t) => {
-      const team = t.team; // unwrap the actual team object
+      const team = t.team;
 
       return {
         id: team.uuid,

@@ -29,12 +29,12 @@ export const StatsOverview = () => {
     {
       title: "Total Visitors",
       icon: <Users className="h-4 w-4 text-muted-foreground" />,
-      value: stats?.data?.totalVisitors,
+      value: (stats?.data?.totalVisitors ?? "0").toLocaleString(),
       subtitle: (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           {(() => {
             const { trend, className, label } = getTrend(
-              stats?.data?.totalVisitorsThisWeek?.change
+              stats?.data?.totalVisitorsThisWeek?.change,
             );
 
             if (trend === "neutral") {

@@ -26,16 +26,20 @@ export function timeAgo(isoString: string): string {
   if (months < 12) return `${months} month${months !== 1 ? "s" : ""} ago`;
   return `${years} year${years !== 1 ? "s" : ""} ago`;
 }
-export const cleanUrl = (url: string): string => {
+export const cleanUrl = (url: string, withPath = true): string => {
+  if (!url) return "";
+
   try {
-    const parsed = new URL(url);
-    let result = parsed.host + parsed.pathname;
-    if (result.endsWith("/")) {
-      result = result.slice(0, -1);
-    }
-    return result;
+    const normalized =
+      url.startsWith("http://") || url.startsWith("https://")
+        ? url
+        : `https://${url}`;
+
+    const parsed = new URL(normalized);
+
+    return parsed.hostname + (withPath ? parsed.pathname : "");
   } catch {
-    return url;
+    return "";
   }
 };
 

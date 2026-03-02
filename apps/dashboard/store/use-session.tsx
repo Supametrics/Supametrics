@@ -28,8 +28,8 @@ export const useSessionStore = create<SessionState>()(
       setUser: (user) => set({ user }),
       clearUser: () => set({ user: null }),
     }),
-    { name: "session-storage" }
-  )
+    { name: "session-storage" },
+  ),
 );
 
 export function useSession() {
@@ -39,7 +39,7 @@ export function useSession() {
   const query = useQuery({
     queryKey: ["session"],
     queryFn: fetchSession,
-    retry: false,
+    retry: true,
     refetchOnWindowFocus: true,
   });
 

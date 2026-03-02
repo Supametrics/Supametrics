@@ -61,7 +61,7 @@ projectRoutes.post("/new", async (c) => {
       .select()
       .from(projects)
       .where(
-        and(eq(projects.userId, currentUser.uuid), isNull(projects.teamId))
+        and(eq(projects.userId, currentUser.uuid), isNull(projects.teamId)),
       );
 
     if (userInfo.subscriptionType === "free" && personalProjects.length >= 5)
@@ -106,7 +106,7 @@ projectRoutes.post("/new", async (c) => {
   if (userInfo.subscriptionType === "free" && teamProjects.length >= 5)
     return c.json(
       { error: "Team free plan limit reached (user's plan applies)" },
-      403
+      403,
     );
 
   if (userInfo.subscriptionType === "free")
@@ -160,7 +160,7 @@ projectRoutes.get("/", async (c) => {
             message: "teamId is required when filtering by team projects",
             data: [],
           },
-          400
+          400,
         );
       }
 
@@ -173,7 +173,7 @@ projectRoutes.get("/", async (c) => {
         .from(projectMembers)
         .innerJoin(projects, eq(projectMembers.projectId, projects.uuid))
         .where(
-          and(eq(projectMembers.userId, userId), eq(projects.teamId, teamId))
+          and(eq(projectMembers.userId, userId), eq(projects.teamId, teamId)),
         )
         .then((rows) => rows.map((r) => ({ ...r.project, role: r.role })));
     } else {
@@ -187,11 +187,14 @@ projectRoutes.get("/", async (c) => {
           projectMembers,
           and(
             eq(projectMembers.projectId, projects.uuid),
-            eq(projectMembers.userId, userId)
-          )
+            eq(projectMembers.userId, userId),
+          ),
         )
         .where(
-          or(eq(projects.userId, userId), eq(projectMembers.userId, userId))
+          and(
+            or(eq(projects.userId, userId), eq(projectMembers.userId, userId)),
+            isNull(projects.teamId),
+          ),
         );
 
       allProjects = rows.map((r: any) => ({
@@ -205,7 +208,7 @@ projectRoutes.get("/", async (c) => {
 
     if (search) {
       allProjects = allProjects.filter((p) =>
-        p.name.toLowerCase().includes(search)
+        p.name.toLowerCase().includes(search),
       );
     }
 
@@ -231,7 +234,7 @@ projectRoutes.get("/", async (c) => {
     const status = "active";
 
     const countsMap = Object.fromEntries(
-      visitorCounts.map((r) => [r.projectId, r.total])
+      visitorCounts.map((r) => [r.projectId, r.total]),
     );
 
     const projectsWithCounts = paginatedProjects.map((p) => ({
@@ -254,7 +257,7 @@ projectRoutes.get("/", async (c) => {
         message: err?.message ?? "Failed to fetch projects",
         data: [],
       },
-      500
+      500,
     );
   }
 });
@@ -331,7 +334,7 @@ projectRoutes.get("/:id", async (c) => {
   } else if (project.teamId) {
     const membership = await getProjectMembership(
       project.uuid,
-      currentUser.uuid
+      currentUser.uuid,
     );
     if (!membership || !membership.role)
       return c.json({ error: "Not a member of this project" }, 403);
@@ -350,8 +353,8 @@ projectRoutes.get("/:id", async (c) => {
           .where(
             and(
               eq(projectApiKeys.projectId, project.uuid),
-              eq(projectApiKeys.revoked, false)
-            )
+              eq(projectApiKeys.revoked, false),
+            ),
           )
           .limit(1)
       : [undefined];
@@ -389,7 +392,7 @@ projectRoutes.post("/:id/invite", async (c) => {
     // 2. Check if user is already a member
     const existingMember = await getProjectMembership(
       projectId,
-      targetUser.uuid
+      targetUser.uuid,
     );
 
     if (existingMember) {
@@ -401,8 +404,8 @@ projectRoutes.post("/:id/invite", async (c) => {
           .where(
             and(
               eq(projectMembers.projectId, projectId),
-              eq(projectMembers.userId, targetUser.uuid)
-            )
+              eq(projectMembers.userId, targetUser.uuid),
+            ),
           );
         return c.json({
           success: true,
@@ -466,8 +469,8 @@ projectRoutes.patch("/:id/role", async (c) => {
     .where(
       and(
         eq(projectMembers.projectId, projectId),
-        eq(projectMembers.userId, targetUserId)
-      )
+        eq(projectMembers.userId, targetUserId),
+      ),
     );
 
   return c.json({ success: true });
@@ -580,8 +583,8 @@ projectRoutes.delete("/:id/members/:userId", async (c) => {
     .where(
       and(
         eq(projectMembers.projectId, projectId),
-        eq(projectMembers.userId, targetUserId)
-      )
+        eq(projectMembers.userId, targetUserId),
+      ),
     )
     .returning();
 
@@ -589,7 +592,7 @@ projectRoutes.delete("/:id/members/:userId", async (c) => {
     // This case should ideally not happen if the frontend knows who is a member
     return c.json(
       { error: "Member not found in project", success: false, data: null },
-      404
+      404,
     );
   }
 
@@ -617,8 +620,8 @@ projectRoutes.delete("/:id/leave", async (c) => {
     .where(
       and(
         eq(projectMembers.projectId, projectId),
-        eq(projectMembers.userId, currentUser.uuid)
-      )
+        eq(projectMembers.userId, currentUser.uuid),
+      ),
     );
 
   return c.json({ success: true });

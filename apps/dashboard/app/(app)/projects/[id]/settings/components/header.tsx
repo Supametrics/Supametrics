@@ -35,9 +35,9 @@ export const Header = ({ title, loading, url, id }: HeaderProps) => {
                 <Skeleton className="h-4 w-32" />
               ) : (
                 <Image
-                  src={`https://icons.duckduckgo.com/ip3/${cleanUrl(
-                    url || "https://supametrics.vercel.app"
-                  )}.ico`}
+                  src={`https://icons.duckduckgo.com/ip3/${
+                    (cleanUrl(url || "https://supametrics.vercel.app"), false)
+                  }.ico`}
                   className="w-3 h-3 rounded-sm"
                   width={16}
                   height={16}
