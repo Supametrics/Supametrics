@@ -36,7 +36,7 @@ authHandler.post("/signup", async (c) => {
           message: parsed.error.issues.map((issue) => issue.message).join(", "),
           data: null,
         },
-        400
+        400,
       );
     }
 
@@ -55,7 +55,7 @@ authHandler.post("/signup", async (c) => {
           message: "An account with this email already exists.",
           data: null,
         },
-        400
+        400,
       );
 
     const hashed = await hashPassword(password!);
@@ -72,13 +72,13 @@ authHandler.post("/signup", async (c) => {
         message: "Account created successfully",
         data: { email },
       },
-      201
+      201,
     );
   } catch (err: any) {
     console.error(err);
     return c.json(
       { success: false, message: "Failed to create account", data: null },
-      500
+      500,
     );
   }
 });
@@ -95,7 +95,7 @@ authHandler.post("/signin", async (c) => {
           message: parsed.error.issues.map((issue) => issue.message).join(", "),
           data: null,
         },
-        400
+        400,
       );
     }
 
@@ -112,7 +112,7 @@ authHandler.post("/signin", async (c) => {
       // Generic message for security
       return c.json(
         { success: false, message: "Invalid email or password", data: null },
-        401
+        401,
       );
     }
 
@@ -121,7 +121,7 @@ authHandler.post("/signin", async (c) => {
       // Generic message for security
       return c.json(
         { success: false, message: "Invalid email or password", data: null },
-        401
+        401,
       );
 
     // Check if email is verified
@@ -145,8 +145,8 @@ authHandler.post("/signin", async (c) => {
       .where(
         and(
           eq(revokedTokens.uuid, foundUser.uuid),
-          eq(revokedTokens.userAgent, userAgent)
-        )
+          eq(revokedTokens.userAgent, userAgent),
+        ),
       );
 
     await db.insert(revokedTokens).values({
@@ -168,7 +168,7 @@ authHandler.post("/signin", async (c) => {
 
     return c.json(
       { success: true, message: "Signed in successfully", data: { email } },
-      200
+      200,
     );
   } catch (err: any) {
     console.error(err);
@@ -178,7 +178,7 @@ authHandler.post("/signin", async (c) => {
         message: "An unexpected error occurred during sign-in",
         data: null,
       },
-      500
+      500,
     );
   }
 });
@@ -195,7 +195,7 @@ authHandler.post("/forgot-password", async (c) => {
           message: parsed.error.issues.map((issue) => issue.message).join(", "),
           data: null,
         },
-        400
+        400,
       );
 
     const { email } = parsed.data;
@@ -214,7 +214,7 @@ authHandler.post("/forgot-password", async (c) => {
           message: "If that email exists, a reset link has been sent to it.",
           data: { email },
         },
-        200
+        200,
       );
 
     const rawToken = randomUUID();
@@ -230,22 +230,22 @@ authHandler.post("/forgot-password", async (c) => {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     });
 
-    const link = process.env.TRUSTED_ORIGIN; // + `/reset-password?token=${rawToken}`;
+    const link =
+      process.env.TRUSTED_ORIGIN + `/reset-password?token=${rawToken}`;
 
-    // TODO: send email with `rawToken` link
     return c.json(
       {
         success: true,
         message: "Reset link sent (stub)",
         data: { email, link },
       },
-      200
+      200,
     );
   } catch (err: any) {
     console.error(err);
     return c.json(
       { success: false, message: "Failed to send reset link", data: null },
-      500
+      500,
     );
   }
 });
@@ -262,7 +262,7 @@ authHandler.post("/verify-reset-password", async (c) => {
           message: parsed.error.issues.map((issue) => issue.message).join(", "),
           data: null,
         },
-        400
+        400,
       );
     }
 
@@ -279,7 +279,7 @@ authHandler.post("/verify-reset-password", async (c) => {
     if (!record || record.expiresAt < new Date()) {
       return c.json(
         { success: false, message: "Invalid or expired token", data: null },
-        400
+        400,
       );
     }
 
@@ -287,7 +287,7 @@ authHandler.post("/verify-reset-password", async (c) => {
     if (!valid) {
       return c.json(
         { success: false, message: "Invalid token", data: null },
-        400
+        400,
       );
     }
 
@@ -304,13 +304,13 @@ authHandler.post("/verify-reset-password", async (c) => {
 
     return c.json(
       { success: true, message: "Password reset successfully", data: null },
-      200
+      200,
     );
   } catch (err: any) {
     console.error(err);
     return c.json(
       { success: false, message: "Failed to reset password", data: null },
-      500
+      500,
     );
   }
 });
