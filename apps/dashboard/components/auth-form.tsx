@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@repo/ui/lib/utils";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import {
 } from "@repo/ui/components/ui/card";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
-import { IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react";
+import { IconBrandGithub, IconBrandGoogle, IconEye, IconEyeOff } from "@tabler/icons-react";
 import { LoadingSpinner } from "@repo/ui/components/loading-spinner";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -27,6 +27,8 @@ export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
     if (pathname.startsWith("/reset-password")) return "reset";
     return "login";
   }, [pathname]);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     signup,
@@ -134,14 +136,29 @@ export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
                   <Label htmlFor="password">
                     {mode === "reset" ? "New Password" : "Password"}
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onBlur={() => validateField("password", password)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onBlur={() => validateField("password", password)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <IconEyeOff size={20} />
+                      ) : (
+                        <IconEye size={20} />
+                      )}
+                    </button>
+                  </div>
                   {error?.password && (
                     <p className="text-sm text-red-500">{error.password}</p>
                   )}
