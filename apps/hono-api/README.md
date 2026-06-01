@@ -6,17 +6,17 @@ This project is a high-performance backend API built with Hono and TypeScript, d
 
 ## Features
 
-- **Authentication & Authorization**: Secure user authentication via email/password and OAuth (Google, GitHub) with robust JWT-based session management, refresh tokens, and role-based access control (RBAC).
-- **User & Profile Management**: APIs for creating, managing, and updating user profiles, including managing subscription types, account status (active, suspended, read-only), and email verification.
-- **Team Management**: Functionality to create and manage teams, including inviting members with specific roles (owner, member, viewer). Supports creating team-owned projects.
-- **Project Management**: Comprehensive APIs for creating, listing, updating, and deleting projects, supporting both personal and team-based ownership. Projects can have defined types (web, mobile, backend).
-- **API Key Management**: Secure generation, rotation, and revocation of API keys (public and secret) for each project to control external access to analytics data.
-- **Real-time Analytics Collection**: Capture and aggregate various analytics events such as page views, visitor IDs, UTM parameters, browser/OS/device information, and event-specific data (e.g., `cta_clicked`).
-- **Data Reporting**: Generate and retrieve custom reports based on collected analytics data for projects.
-- **Rate Limiting**: Implements Redis-backed rate limiting to protect API endpoints from abuse and ensure service stability for different routes.
-- **Scalable Data Storage**: Utilizes a PostgreSQL database (Neon Serverless) for reliable and scalable data persistence, managed through Drizzle ORM.
-- **Efficient Caching**: Integrates Redis for high-speed data caching and transient storage for sessions and rate limiting.
-- **Flexible Access Control**: Supports distinct roles for team members (owner, member, viewer) and project members (admin, editor, viewer), allowing granular permissions.
+-   **Authentication & Authorization**: Secure user authentication via email/password. It includes robust JWT-based session management with refresh tokens and role-based access control (RBAC). The project's roadmap also outlines support for OAuth (Google, GitHub) authentication.
+-   **User & Profile Management**: APIs for creating, managing, and updating user profiles, including user status (active, suspended, read-only), and email verification.
+-   **Team Management**: Functionality to create and manage teams, including inviting members with specific roles (owner, member, viewer). Supports creating team-owned projects and managing team membership.
+-   **Project Management**: Comprehensive APIs for creating, listing, updating, and deleting projects, supporting both personal and team-based ownership. Projects can have defined types (web, mobile, backend) and their unique slugs are automatically generated and managed.
+-   **API Key Management**: Secure generation, rotation, and revocation of API keys (public and secret) for each project to control external access to analytics data.
+-   **Real-time Analytics Collection**: Capture and aggregate various analytics events such as page views, visitor IDs, UTM parameters, browser/OS/device information, and event-specific data (e.g., `cta_clicked`). Tracks pathname, referrer, hostname, country, and city.
+-   **Data Reporting**: Generate and retrieve custom reports based on collected analytics data for projects. Reports include details like name, description, type, and associated data payload.
+-   **Rate Limiting**: Implements Redis-backed rate limiting using user agent and IP to protect API endpoints from abuse and ensure service stability across different routes.
+-   **Scalable Data Storage**: Utilizes a PostgreSQL database (Neon Serverless) for reliable and scalable data persistence, managed through Drizzle ORM.
+-   **Efficient Caching**: Integrates Redis for high-speed data caching and transient storage for sessions and rate limiting.
+-   **Flexible Access Control**: Supports distinct roles for team members (owner, member, viewer) and project members (admin, editor, viewer), allowing granular permissions.
 
 ## Stacks / Technologies
 
@@ -26,14 +26,14 @@ This project is a high-performance backend API built with Hono and TypeScript, d
 | TypeScript                 | Statically typed superset of JavaScript                 | [TypeScriptLang.org](https://www.typescriptlang.org/)                                  |
 | Drizzle ORM                | Type-safe Node.js ORM for SQL databases                 | [DrizzleORM.com](https://orm.drizzle.team/)                                            |
 | PostgreSQL (Neon)          | Serverless, scalable relational database                | [Neon.tech](https://neon.tech/)                                                        |
-| Redis (Upstash)            | In-memory data store for caching and rate limiting      | [Redis.io](https://redis.io/)                                                          |
-| Better Auth                | Flexible and secure authentication library              | [BetterAuth.com](https://betterauth.com/) (example)                                    |
+| Redis                      | In-memory data store for caching and rate limiting      | [Redis.io](https://redis.io/)                                                          |
+| Better Auth                | Flexible and secure authentication library              | [BetterAuth](https://www.npmjs.com/package/better-auth)                                |
 | Zod                        | TypeScript-first schema declaration and validation      | [Zod.dev](https://zod.dev/)                                                            |
-| Nano ID                    | Tiny, secure, URL-friendly unique string ID generator   | [NPM Nano ID](https://www.npmjs.com/package/nanoid)                                    |
-| `@hono/node-server`        | Node.js adapter for Hono applications                   | [NPM @hono/node-server](https://www.npmjs.com/package/@hono/node-server)               |
-| `@neondatabase/serverless` | Serverless driver for Neon PostgreSQL                   | [NPM @neondatabase/serverless](https://www.npmjs.com/package/@neondatabase/serverless) |
 | `bcrypt-ts`                | Password hashing library                                | [NPM bcrypt-ts](https://www.npmjs.com/package/bcrypt-ts)                               |
 | `jsonwebtoken`             | JSON Web Token implementation                           | [NPM jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken)                         |
+| `nanoid`                   | Tiny, secure, URL-friendly unique string ID generator   | [NPM Nano ID](https://www.npmjs.com/package/nanoid)                                    |
+| `@hono/node-server`        | Node.js adapter for Hono applications                   | [NPM @hono/node-server](https://www.npmjs.com/package/@hono/node-server)               |
+| `@neondatabase/serverless` | Serverless driver for Neon PostgreSQL                   | [NPM @neondatabase/serverless](https://www.npmjs.com/package/@neondatabase/serverless) |
 | `dotenv`                   | Loads environment variables from a `.env` file          | [NPM dotenv](https://www.npmjs.com/package/dotenv)                                     |
 | `crypto`                   | Node.js built-in module for cryptographic functionality | [Node.js Crypto](https://nodejs.org/api/crypto.html)                                   |
 
@@ -68,12 +68,21 @@ cp .env.example .env
 
 After setting `DATABASE_URL`, ensure your database schema is up-to-date:
 
-1.  **Generate Migration**:
+1.  **Install Drizzle Kit**: If not already installed globally or locally:
+    ```bash
+    npm install drizzle-kit --save-dev
+    # or
+    yarn add drizzle-kit --dev
+    ```
+2.  **Generate Migration**: This command will create new migration files based on changes in your schema.
     ```bash
     npx drizzle-kit generate:pg
     ```
-2.  **Apply Migration**: (Requires a separate script to run the migration)
-    - _Note_: The codebase implies migrations are handled via `drizzle-kit`, but an explicit migration script (e.g., `drizzle-kit push:pg`) is not shown. You might need to set one up or use a `drizzle-kit push:pg` command for direct schema synchronization if no migration files are manually applied.
+3.  **Apply Migration**: This command will push the latest schema changes to your database.
+    ```bash
+    npx drizzle-kit push:pg
+    ```
+    _Note_: The project's `package.json` includes a `migrate:event-types` script (`tsx scripts/migrate-event-types.ts`), which suggests specialized migrations may also exist. Ensure to run any necessary custom migration scripts as per project documentation.
 
 ### Local Development
 
@@ -114,7 +123,40 @@ Once the server is running, you can interact with the API using the documented e
 
 ## API Documentation
 
-The existing `README.md` provides a comprehensive guide to all available API endpoints, including `GET /health`, `POST /auth/*` (for sign-up, sign-in, OAuth), `GET /overview`, `POST /projects/new`, `GET /projects`, `POST /projects/:id/rotate-key`, `DELETE /projects/:id`, `GET /projects/:id`, `POST /projects/:id/invite`, `PATCH /projects/:id/role`, `PATCH /projects/:id`, `GET /projects/:id/members`, `DELETE /projects/:id/leave`, `GET /:id/analytics`, `GET /:id/analytics/:eventName`, `GET /:id/reports`, `GET /teams`, and `POST /teams`. Please refer to the detailed descriptions above for specific request parameters, example responses, and error conditions for each endpoint.
+The provided codebase defines several API routes, accessible under the `/api/v1` base path:
+
+-   **`GET /health`**: Checks the server's health. (Rate-limited: 5 requests/minute).
+-   **`POST /auth/*`**: Authentication routes for user sign-up, sign-in, and password management. (Rate-limited: 15 requests/hour).
+    -   `POST /auth/signup`: Register a new user with name, email, and password.
+    -   `POST /auth/signin`: Authenticate a user with email and password, issuing access and refresh tokens.
+    -   `POST /auth/forgot-password`: Initiates a password reset process by sending a link to the user's email.
+    -   `POST /auth/verify-reset-password`: Resets the user's password using a valid token.
+-   **`GET /session`**: Retrieves current user session information, including associated teams. (Requires authentication, Rate-limited: 90 requests/hour).
+-   **`GET /session/signout`**: Invalidates the current user session and clears authentication cookies. (Requires authentication).
+-   **`GET /profile`**: Fetches the authenticated user's profile details. (Requires authentication, Rate-limited: 90 requests/hour).
+-   **`PATCH /profile`**: Updates the authenticated user's profile information. (Requires authentication, Rate-limited: 90 requests/hour).
+-   **`POST /projects/new`**: Creates a new project, which can be personal or team-owned. (Requires authentication, Rate-limited: 100 requests/hour).
+-   **`GET /projects`**: Lists projects accessible to the authenticated user, with filtering, searching, and pagination options. (Requires authentication, Rate-limited: 100 requests/hour).
+-   **`GET /projects/:id`**: Retrieves details for a specific project, including API keys if the user has appropriate roles. (Requires authentication, Rate-limited: 100 requests/hour).
+-   **`POST /projects/:id/rotate-key`**: Generates and replaces the API keys for a given project. (Requires authentication as admin/owner, Rate-limited: 100 requests/hour).
+-   **`DELETE /projects/:id`**: Deletes a project. (Requires authentication as project owner or team admin, Rate-limited: 100 requests/hour).
+-   **`POST /projects/:id/invite`**: Invites a user to a project or updates an existing member's role. (Requires authentication as project admin, Rate-limited: 100 requests/hour).
+-   **`PATCH /projects/:id/role`**: Updates a project member's role. (Requires authentication as project admin, Rate-limited: 100 requests/hour).
+-   **`PATCH /projects/:id`**: Updates project details such as name, description, URL, and type. (Requires authentication as project owner or admin, Rate-limited: 100 requests/hour).
+-   **`GET /projects/:id/members`**: Lists all members associated with a specific project. (Requires authentication, Rate-limited: 100 requests/hour).
+-   **`DELETE /projects/:id/members/:userId`**: Removes a member from a project. (Requires authentication as project admin, Rate-limited: 100 requests/hour).
+-   **`DELETE /projects/:id/leave`**: Allows a non-admin user to leave a project. (Requires authentication, Rate-limited: 100 requests/hour).
+-   **`GET /overview`**: Provides an aggregate overview of projects, reports, and visitor statistics. Supports filtering by personal or team projects. (Requires authentication, Rate-limited: 100 requests/hour).
+-   **`GET /analytics/:id`**: Fetches detailed analytics data for a specific project, including visitor trends, browser/OS/device summaries, top paths, and referrers. Supports various time filters and event types. (Requires authentication, Rate-limited: 50 requests/hour).
+-   **`GET /analytics/:id/events/list`**: Retrieves a list of all unique events recorded for a project, along with their counts and last seen timestamps. (Requires authentication, Rate-limited: 50 requests/hour).
+-   **`GET /reports/:id`**: Fetches a list of reports for a given project, with pagination. (Requires authentication, Rate-limited: 50 requests/hour).
+-   **`GET /teams`**: Lists all teams the authenticated user is a member of. (Requires authentication, Rate-limited: 50 requests/hour).
+-   **`POST /teams`**: Creates a new team. (Requires authentication and a paid subscription, Rate-limited: 50 requests/hour).
+-   **`PATCH /teams/:id`**: Updates the name of a specific team. (Requires authentication as team owner, Rate-limited: 50 requests/hour).
+-   **`DELETE /teams/:id/members/:memberId`**: Removes a member from a team. (Requires authentication as team owner, Rate-limited: 50 requests/hour).
+-   **`POST /teams/:id/invite`**: Invites a user to a team. (Requires authentication as team owner, Rate-limited: 50 requests/hour).
+-   **`GET /teams/:id/members`**: Lists all members of a specific team. (Requires authentication as team member, Rate-limited: 50 requests/hour).
+-   **`POST /teams/:id/leave`**: Allows a non-owner member to leave a team. (Requires authentication, Rate-limited: 50 requests/hour).
 
 ## Contributing
 
@@ -150,7 +192,7 @@ This project is licensed under the MIT License.
 
 Connect with me:
 
-- **Email**: [treasureuzoma650@gmail.com](mailto:hello@idolo.dev)
-- **X**: [@idolodev](https://twitter.com/idolodev)
+-   **Email**: [treasureuzoma650@gmail.com](mailto:hello@idolo.dev)
+-   **X**: [@idolodev](https://twitter.com/idolodev)
 
 [![Readme was generated by Readmit](https://img.shields.io/badge/Readme%20was%20generated%20by-Readmit-brightred)](https://readmit.vercel.app)
