@@ -92,9 +92,6 @@ export const Header = ({
                   Upgrade to Pro
                 </Link>
               )}
-              <Link href="/docs/introduction" className="hover:bg-accent p-1">
-                Go to Docs{" "}
-              </Link>
             </PopoverContent>
           </Popover>
         </div>

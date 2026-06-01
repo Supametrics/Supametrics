@@ -9,6 +9,8 @@ import { SummaryCard } from "./components/summary-card";
 import { Grid } from "./components/grid";
 import { cleanUrl, formatDuration } from "@repo/ui/lib/utils";
 import { Error } from "@/components/error";
+import { UnifiedEventSelector } from "./components/unified-event-selector";
+import { useAnalyticsStore } from "@/store/use-analytics-store";
 
 export default function ProjectAnalyticsPage({
   params,
@@ -17,8 +19,19 @@ export default function ProjectAnalyticsPage({
 }) {
   const projectId = use(params);
   const { data, isLoading, error } = useAnalytics(projectId.id);
+  const { selectedEvent, setSelectedEvent } = useAnalyticsStore();
 
   if (error) return <Error description="Failed to fetch analytics" />;
+
+  // Dynamic labels based on selected event
+  const getEventLabel = () => {
+    if (selectedEvent === "pageview") {
+      return { visits: "Total Visits", visitors: "Unique Visitors" };
+    }
+    return { visits: "Total Events", visitors: "Unique Users" };
+  };
+
+  const labels = getEventLabel();
 
   return (
     <div>
@@ -31,9 +44,24 @@ export default function ProjectAnalyticsPage({
       />
 
       <main className="py-7 md:py-8 px-5 space-y-6 flex flex-col">
+        {/* Unified Event Selector */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Event</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              View analytics for specific events
+            </p>
+          </div>
+          <UnifiedEventSelector
+            projectId={projectId.id}
+            selectedValue={selectedEvent}
+            onValueChange={setSelectedEvent}
+          />
+        </div>
+
         <MetricsGrid>
           <StatCard
-            title="Total Visits"
+            title={labels.visits}
             value={data?.totalVisits ?? 0}
             loading={isLoading}
             change={
@@ -43,7 +71,7 @@ export default function ProjectAnalyticsPage({
             }
           />
           <StatCard
-            title="Unique Visitors"
+            title={labels.visitors}
             value={data?.uniqueVisitors ?? 0}
             loading={isLoading}
             change={
@@ -131,7 +159,7 @@ export default function ProjectAnalyticsPage({
             loading={isLoading}
             data={
               data?.topCities?.map((r) => ({
-                label: cleanUrl(String(r.city ?? "Unknown")),
+                label: String(r.city ?? "Unknown"),
                 count: Number(r.count ?? 0),
               })) ?? []
             }

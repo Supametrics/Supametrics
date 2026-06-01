@@ -1,16 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@repo/ui/components/ui/chart";
+import { Line, LineChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 
 type FrequencyItem = {
@@ -24,96 +16,140 @@ type FrequencyLineChartProps = {
   loading: boolean;
 };
 
-const chartConfig = {
-  totalVisits: { label: "Total Visits", color: "var(--chart-1)" },
-  uniqueVisitors: { label: "Unique Visitors", color: "var(--chart-2)" },
-} satisfies ChartConfig;
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) {
+    return null;
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[160px]">
+      <p className="text-sm font-semibold text-foreground mb-2">{label}</p>
+      <div className="space-y-1.5">
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-xs text-muted-foreground">{entry.name}</span>
+            </div>
+            <span className="text-sm font-medium text-foreground">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export function FrequencyLineChart({
   frequency,
   loading,
 }: FrequencyLineChartProps) {
-  if (loading) return <Skeleton className="h-[40vh]" />;
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Check if data exists and has valid values
+  const hasData = frequency && frequency.length > 0;
+  const hasNonZeroData = hasData && 
+    frequency.some(item => (item.totalVisits || 0) > 0 || (item.uniqueVisitors || 0) > 0);
+
+  // If no data, show empty state
+  if (!hasData || !hasNonZeroData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Activity Over Time</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[300px] border border-dashed rounded-lg">
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">No activity data available</p>
+              <p className="text-xs text-muted-foreground">Data will appear here once events are tracked</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="pt-0">
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
-        >
-          <AreaChart data={frequency}>
-            <defs>
-              <linearGradient id="fillTotalVisits" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--chart-1)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--chart-1)"
-                  stopOpacity={0.1}
-                />
-              </linearGradient>
-              <linearGradient
-                id="fillUniqueVisitors"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="5%"
-                  stopColor="var(--chart-2)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--chart-2)"
-                  stopOpacity={0.1}
-                />
-              </linearGradient>
-            </defs>
-
-            <CartesianGrid vertical={false} stroke="#eee" />
-
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">Activity Over Time</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart 
+            data={frequency}
+            margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              vertical={false}
+              stroke="currentColor"
+              className="stroke-muted"
+            />
+            
             <XAxis
               dataKey="time"
+              tick={{ fill: "currentColor" }}
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
-              minTickGap={20}
+              className="text-xs text-muted-foreground"
             />
-
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) => value}
-                  indicator="dot"
-                />
-              }
+            
+            <YAxis
+              allowDecimals={false}
+              tick={{ fill: "currentColor" }}
+              tickLine={false}
+              axisLine={false}
+              className="text-xs text-muted-foreground"
             />
-
-            <Area
+            
+            <Tooltip
+              content={<CustomTooltip />}
+            />
+            
+            <Legend 
+              wrapperStyle={{
+                paddingTop: "20px",
+                fontSize: "14px",
+              }}
+              iconType="line"
+            />
+            
+            <Line
+              name="Total Visits"
               dataKey="totalVisits"
-              type="natural"
-              fill="url(#fillTotalVisits)"
-              stroke="var(--chart-1)"
-              stackId="a"
+              type="linear"
+              stroke="#3b82f6"
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, fill: "#3b82f6" }}
             />
-            <Area
+            
+            <Line
+              name="Unique Visitors"
               dataKey="uniqueVisitors"
-              type="natural"
-              fill="url(#fillUniqueVisitors)"
-              stroke="var(--chart-2)"
-              stackId="a"
+              type="linear"
+              stroke="#10b981"
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, fill: "#10b981" }}
             />
-
-            <ChartLegend content={<ChartLegendContent payload={[]} />} />
-          </AreaChart>
-        </ChartContainer>
+          </LineChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

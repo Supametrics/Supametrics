@@ -279,10 +279,7 @@ async function getCommonAggregations(conditions: any[]) {
 }
 
 // Main fetcher
-async function fetchAnalytics(
-  c: Context<{ Variables: AuthType }>,
-  eventName?: string
-) {
+async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
   const currentUser = await getUserOrNull(c);
   const projectId = c.req.param("id");
 
@@ -320,6 +317,9 @@ async function fetchAnalytics(
   const onlineVisitors = await getOnlineVisitors(projectId);
 
   const filter = (c.req.query("filter") || "today").toLowerCase();
+  const eventType = (c.req.query("eventType") || "pageview").toLowerCase();
+  const eventName = c.req.query("eventName"); // Get specific event name from query
+  
   if (!allowedFilters.includes(filter)) {
     return c.json(
       {
@@ -340,16 +340,35 @@ async function fetchAnalytics(
     gte(analyticsEvents.timestamp, startTime),
   ];
   if (endTime) conditionsCurrent.push(lte(analyticsEvents.timestamp, endTime));
-  if (eventName)
+  
+  // Filter by event type
+  if (eventType === "pageview") {
+    conditionsCurrent.push(eq(analyticsEvents.eventType, "pageview"));
+  } else if (eventType === "custom") {
+    conditionsCurrent.push(sql`${analyticsEvents.eventType} != 'pageview'`);
+  }
+  
+  // Filter by specific event name if provided
+  if (eventName) {
     conditionsCurrent.push(eq(analyticsEvents.eventName, eventName));
+  }
 
   const conditionsPrevious: any[] = [
     eq(analyticsEvents.projectId, projectId),
     gte(analyticsEvents.timestamp, prevRange.startTime),
     lte(analyticsEvents.timestamp, prevRange.endTime),
   ];
-  if (eventName)
+  
+  // Apply same event type filter to previous period
+  if (eventType === "pageview") {
+    conditionsPrevious.push(eq(analyticsEvents.eventType, "pageview"));
+  } else if (eventType === "custom") {
+    conditionsPrevious.push(sql`${analyticsEvents.eventType} != 'pageview'`);
+  }
+  
+  if (eventName) {
     conditionsPrevious.push(eq(analyticsEvents.eventName, eventName));
+  }
 
   const [commonData, previousTotalsRes] = await Promise.all([
     getCommonAggregations(conditionsCurrent),
@@ -432,6 +451,7 @@ async function fetchAnalytics(
       onlineVisitors,
       name: project.name,
       filter,
+      eventType,
       ...(eventName ? { eventName } : {}),
       ...commonData,
       totalVisitsChange,
@@ -442,8 +462,80 @@ async function fetchAnalytics(
 }
 
 analyticsRoutes.get("/:id", (c) => fetchAnalytics(c));
-analyticsRoutes.get("/:id/:eventName", (c) =>
-  fetchAnalytics(c, c.req.param("eventName"))
-);
+
+// Get all available events for a project
+analyticsRoutes.get("/:id/events/list", async (c) => {
+  const currentUser = await getUserOrNull(c);
+  const projectId = c.req.param("id");
+
+  if (!isValidUUID.safeParse(projectId).success) {
+    return c.json(
+      {
+        error: "Invalid project ID",
+        data: null,
+        success: false,
+        message: "The provided project ID is not a valid UUID",
+      },
+      400
+    );
+  }
+
+  if (!(await getProjectMembership(projectId, currentUser!.uuid))) {
+    return c.json(
+      {
+        error: "Forbidden",
+        data: null,
+        message: "You do not have access to this project",
+        success: false,
+      },
+      403
+    );
+  }
+
+  const sortBy = (c.req.query("sortBy") || "popularity").toLowerCase();
+  
+  // Get all unique events with their counts
+  const events = await db
+    .select({
+      eventType: analyticsEvents.eventType,
+      eventName: analyticsEvents.eventName,
+      count: sql`count(*)`,
+      uniqueVisitors: sql`count(distinct ${analyticsEvents.visitorId})`,
+      lastSeen: sql`max(${analyticsEvents.timestamp})`,
+      firstSeen: sql`min(${analyticsEvents.timestamp})`,
+    })
+    .from(analyticsEvents)
+    .where(
+      and(
+        eq(analyticsEvents.projectId, projectId),
+        isNotNull(analyticsEvents.eventName)
+      )
+    )
+    .groupBy(analyticsEvents.eventType, analyticsEvents.eventName)
+    .orderBy(
+      sortBy === "recent"
+        ? desc(sql`max(${analyticsEvents.timestamp})`)
+        : desc(sql`count(*)`)
+    )
+    .limit(100);
+
+  const formattedEvents = events.map((event) => ({
+    eventType: event.eventType,
+    eventName: event.eventName,
+    count: Number(event.count),
+    uniqueVisitors: Number(event.uniqueVisitors),
+    lastSeen: event.lastSeen,
+    firstSeen: event.firstSeen,
+  }));
+
+  return c.json({
+    success: true,
+    message: "Events fetched successfully",
+    data: {
+      events: formattedEvents,
+      total: formattedEvents.length,
+    },
+  });
+});
 
 export default analyticsRoutes;

@@ -96,6 +96,7 @@ func GetAnalytics(c *fiber.Ctx) error {
 
 	projectID := ctx.ProjectID
 	filter := c.Query("filter", "today")
+	eventType := c.Query("eventType", "pageview")
 	eventName := c.Query("eventName")
 
 	isValidFilter := false
@@ -115,10 +116,24 @@ func GetAnalytics(c *fiber.Ctx) error {
 
 	whereClause := "project_id = $1 AND timestamp >= $2 AND timestamp <= $3"
 	queryArgs := []interface{}{projectID, startTime, endTime}
+	argIndex := 4
 
+	// Filter by event type
+	if eventType == "pageview" {
+		whereClause += fmt.Sprintf(" AND event_type = $%d", argIndex)
+		queryArgs = append(queryArgs, "pageview")
+		argIndex++
+	} else if eventType == "custom" {
+		whereClause += fmt.Sprintf(" AND event_type != $%d", argIndex)
+		queryArgs = append(queryArgs, "pageview")
+		argIndex++
+	}
+
+	// Filter by specific event name if provided
 	if eventName != "" {
-		whereClause += " AND event_name = $4"
+		whereClause += fmt.Sprintf(" AND event_name = $%d", argIndex)
 		queryArgs = append(queryArgs, eventName)
+		argIndex++
 	}
 
 	summaryQuery := fmt.Sprintf(`
@@ -183,19 +198,25 @@ func GetAnalytics(c *fiber.Ctx) error {
 		frequencyData = append(frequencyData, fd)
 	}
 
+	responseData := fiber.Map{
+		"projectId":           projectID,
+		"filter":              filter,
+		"eventType":           eventType,
+		"totalVisits":         summary.TotalVisits,
+		"uniqueVisitors":      summary.UniqueVisitors,
+		"totalSessions":       summary.TotalSessions,
+		"totalDuration":       summary.TotalDuration,
+		"avgSessionDuration":  summary.AvgSessionDuration,
+		"frequency":           frequencyData,
+	}
+
+	if eventName != "" {
+		responseData["eventName"] = eventName
+	}
+
 	return c.JSON(fiber.Map{
 		"success": true,
 		"message": "Analytics fetched successfully",
-		"data": fiber.Map{
-			"projectId":      projectID,
-			"filter":         filter,
-			"eventName":      eventName,
-			"totalVisits":         summary.TotalVisits,
-			"uniqueVisitors":      summary.UniqueVisitors,
-			"totalSessions":       summary.TotalSessions,
-			"totalDuration":       summary.TotalDuration,
-			"avgSessionDuration":  summary.AvgSessionDuration,
-			"frequency":           frequencyData,
-		},
+		"data":    responseData,
 	})
 }

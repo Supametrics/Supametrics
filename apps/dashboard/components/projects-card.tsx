@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@repo/ui/components/ui/card";
 import Link from "next/link";
-import { Users, Globe, Smartphone, Server } from "lucide-react";
+import { Users, Globe, Smartphone, Server, ArrowRight } from "lucide-react";
 import FilterDropdown from "@repo/ui/components/ui/filter";
 import { useProjects } from "@/hooks/use-projects";
 import { NoDataFound } from "./no-data";
@@ -18,14 +18,15 @@ import { Project } from "@repo/ui/types";
 const filterOptions = ["Newest", "Oldest"];
 
 const SkeletonCard = () => (
-  <Card className="animate-pulse">
-    <CardHeader>
-      <CardTitle className="h-4 bg-muted rounded w-3/4 mb-2" />
+  <Card className="relative overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/50 to-transparent animate-shimmer" />
+    <CardHeader className="pb-3">
+      <div className="h-5 bg-muted rounded w-3/4 animate-pulse" />
     </CardHeader>
-    <CardContent className="flex flex-col gap-2">
-      <div className="h-3 bg-muted rounded w-full" />
-      <div className="h-3 bg-muted rounded w-1/2" />
-      <div className="h-3 bg-muted rounded w-1/3" />
+    <CardContent className="space-y-3">
+      <div className="h-4 bg-muted rounded w-full animate-pulse" />
+      <div className="h-4 bg-muted rounded w-2/3 animate-pulse" />
+      <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
     </CardContent>
   </Card>
 );
@@ -64,9 +65,14 @@ export const ProjectsCard = () => {
   );
 
   return (
-    <section>
-      <div className="flex_between">
-        <h2 className="text-lg font-semibold mt-4 mb-2">Your Projects</h2>
+    <section className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Projects</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+          </p>
+        </div>
         <FilterDropdown
           multiple={false}
           options={filterOptions}
@@ -75,7 +81,7 @@ export const ProjectsCard = () => {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((project, index) => {
           const isLast = index === projects.length - 1;
           return (
@@ -96,52 +102,66 @@ export const ProjectsCard = () => {
   );
 };
 
-const ProjectCard = ({ project }: { project: Project }) => (
-  <Link
-    href={`/projects/${project.uuid}/analytics`}
-    className="block hover:shadow-lg hover:scale-[1.02] transition-transform duration-200 cursor-pointer"
-    tabIndex={0}
-  >
-    <Card className="hover:shadow-md transition cursor-pointer">
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          {project.status === "active" && (
-            <span
-              aria-label="Active"
-              title="Active"
-              className="inline-block w-2 h-2 rounded-full bg-green-500 select-none"
-            />
-          )}
-          <p className="truncate" title={project.name}>
-            {project.name}
-          </p>
-        </CardTitle>
-      </CardHeader>
+const ProjectCard = ({ project }: { project: Project }) => {
+  // Calculate days since creation
+  const daysSinceCreation = Math.floor(
+    (new Date().getTime() - new Date(project.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  
+  const timeAgo = daysSinceCreation === 0 
+    ? "Today" 
+    : daysSinceCreation === 1 
+    ? "Yesterday" 
+    : daysSinceCreation < 30 
+    ? `${daysSinceCreation}d ago`
+    : daysSinceCreation < 365
+    ? `${Math.floor(daysSinceCreation / 30)}mo ago`
+    : `${Math.floor(daysSinceCreation / 365)}y ago`;
 
-      <CardContent className="flex flex-col gap-2 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1 truncate">
-          <p className="truncate">{cleanUrl(project.url) ?? "—"}</p>
-        </div>
+  return (
+    <Link
+      href={`/projects/${project.uuid}/analytics`}
+      className="block group"
+      tabIndex={0}
+    >
+      <Card className="h-full group-hover:shadow-lg group-hover:shadow-primary/5 transition-all duration-300 border-border/50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        <CardHeader className="pb-3 relative">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg font-semibold tracking-tight truncate" title={project.name}>
+                {project.name}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Created {timeAgo}
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all duration-300 flex-shrink-0" />
+          </div>
+        </CardHeader>
 
-        <div className="flex items-center gap-2">
-          {project.type === "web" ? (
-            <Globe className="h-3 w-3" />
-          ) : project.type === "mobile" ? (
-            <Smartphone className="h-3 w-3" />
-          ) : project.type === "backend" ? (
-            <Server className="h-3 w-3" />
-          ) : (
-            <Globe className="h-3 w-3 text-gray-400" />
-          )}
+        <CardContent className="space-y-3 relative">
+          <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <Globe className="h-4 w-4 flex-shrink-0" />
+            <p className="truncate" title={cleanUrl(project.url) ?? "—"}>
+              {cleanUrl(project.url) ?? "—"}
+            </p>
+          </div>
 
-          <span className="capitalize">{project.type ?? "—"}</span>
-        </div>
+        
 
-        <div className="flex items-center gap-2">
-          <Users className="h-3 w-3" />
-          <span>{project.visitors?.toLocaleString() ?? 0} visitors</span>
-        </div>
-      </CardContent>
-    </Card>
-  </Link>
-);
+          <div className="flex items-center gap-2.5 pt-3 border-t-2 border-border">
+            <Users className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+            <span className="text-sm">
+              <span className="font-semibold text-foreground">
+                {project.visitors?.toLocaleString() ?? 0}
+              </span>
+              <span className="text-muted-foreground ml-1">visitors</span>
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+};
