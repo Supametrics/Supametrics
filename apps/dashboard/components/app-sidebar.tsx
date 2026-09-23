@@ -79,7 +79,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       },
       {
         title: "Documentation",
-        url: "/docs",
+        url: "https://supametricsdocs.vercel.app/docs/introduction",
         icon: BookOpen,
         items: [
           {
