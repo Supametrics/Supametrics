@@ -96,7 +96,7 @@ export function useAuth() {
       setLoading(true);
       const { data: res } = await axiosFetch.post<Response>(
         "/auth/signin",
-        values
+        values,
       );
       if (!res.success) throw new Error(res?.message ?? res.error);
 
@@ -124,19 +124,14 @@ export function useAuth() {
     try {
       setLoading(true);
       const { data: res } = await axiosFetch.post<Response>(
-        "/auth/signup",
-        values
+        "/auth/login",
+        values,
       );
 
-      if (!res.data.success) {
-        throw new Error(res?.message ?? res.error);
-      }
+      if (!res.success) throw new Error(res?.message ?? res.error);
 
       setSuccess(true);
       toast.success(res.message);
-
-      // Redirect to verify email page after signup
-      router.push("/verify-email");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error signing up";
       setError((prev) => ({ ...prev, general: message }));
@@ -158,7 +153,7 @@ export function useAuth() {
         "/auth/forgot-password",
         {
           email,
-        }
+        },
       );
       if (!res.success) throw new Error(res?.message ?? res.error);
 
@@ -188,7 +183,7 @@ export function useAuth() {
       setLoading(true);
       const { data: res } = await axiosFetch.post<Response>(
         "/auth/verify-reset-password",
-        { token, password }
+        { token, password },
       );
       if (!res.success) throw new Error(res?.message ?? res.error);
 

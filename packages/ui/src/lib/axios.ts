@@ -23,6 +23,12 @@ axiosFetch.interceptors.response.use(
       message = "Unable to connect to server. Please check your internet.";
     }
 
+    // Handle 401 Unauthorized - redirect to login
+    if (error.response?.status === 401) {
+      window.location.href = "/login";
+      return Promise.reject(new Error("Session expired. Redirecting to login."));
+    }
+
     return Promise.reject(new Error(message));
   }
 );
