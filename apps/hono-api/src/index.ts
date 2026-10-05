@@ -35,7 +35,7 @@ const v1 = new Hono().basePath("/api/v1");
 v1.use(
   "*",
   cors({
-    origin: process.env.TRUSTED_ORIGIN || "http://localhost:3002",
+    origin: process.env.TRUSTED_ORIGIN || "http://localhost:3000",
     allowHeaders: [
       "Content-Type",
       "Authorization",
