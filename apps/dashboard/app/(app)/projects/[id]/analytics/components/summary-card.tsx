@@ -58,18 +58,20 @@ export const SummaryCard = ({
     return (
       <div className="relative mb-2">
         <div
-          className="w-full bg-main/10 rounded-sm overflow-hidden"
+          className="w-full overflow-hidden rounded-sm bg-main/10"
           style={{ height: `${height}px` }}
         >
           <div
-            className="h-full bg-main/65 flex items-center px-2 text-xs text-primary font-medium rounded-sm"
+            className="relative flex h-full items-center rounded-sm bg-main/65 px-2"
             style={{ width: `${percentage}%` }}
           >
-            {renderLabel(item.label)}
+            <p className="absolute left-2 z-10 whitespace-nowrap text-xs font-medium text-primary">
+              {renderLabel(item.label)}
+            </p>
           </div>
         </div>
 
-        <div className="absolute right-2 top-0 h-full flex items-center text-xs font-medium text-gray-900 dark:text-white">
+        <div className="absolute right-2 top-0 z-20 flex h-full items-center text-xs font-medium text-gray-900 dark:text-white">
           {item.count.toLocaleString()}
         </div>
       </div>
