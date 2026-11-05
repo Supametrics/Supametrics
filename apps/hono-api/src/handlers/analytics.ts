@@ -180,7 +180,12 @@ async function getOnlineVisitors(projectId: string) {
 }
 
 // Aggregations helper
-async function getCommonAggregations(conditions: any[]) {
+async function getCommonAggregations(
+  conditions: any[],
+  projectId: string,
+  startTime: Date,
+  endTime?: Date,
+) {
   const commonSelect = (groupByCols: any[]) =>
     db
       .select({
@@ -239,23 +244,42 @@ async function getCommonAggregations(conditions: any[]) {
       })
       .from(analyticsEvents)
       .where(and(...conditions)),
+    // Calculate duration from full sessions, not just filtered events
     db
       .select({
-        totalDuration: sql`sum(session_duration)`,
-        avgDuration: sql`avg(session_duration)`,
+        totalDuration: sql`sum(all_sessions.session_duration)`,
+        avgDuration: sql`avg(all_sessions.session_duration)`,
       })
       .from(
         db
           .select({
-            session_duration: sql`GREATEST(
-                EXTRACT(EPOCH FROM (MAX(${analyticsEvents.timestamp}) - MIN(${analyticsEvents.timestamp}))),
-                COALESCE(NULLIF(MAX(${analyticsEvents.duration}), 0), 0)
-              )`.as("session_duration"),
+            sessionId: analyticsEvents.sessionId,
           })
           .from(analyticsEvents)
           .where(and(...conditions))
           .groupBy(analyticsEvents.sessionId)
-          .as("s"),
+          .as("filtered"),
+      )
+      .leftJoin(
+        db
+          .select({
+            sessionId: analyticsEvents.sessionId,
+            session_duration: sql`GREATEST(
+              EXTRACT(EPOCH FROM (MAX(${analyticsEvents.timestamp}) - MIN(${analyticsEvents.timestamp}))),
+              COALESCE(NULLIF(MAX(${analyticsEvents.duration}), 0), 0)
+            )`.as("session_duration"),
+          })
+          .from(analyticsEvents)
+          .where(
+            and(
+              eq(analyticsEvents.projectId, projectId),
+              gte(analyticsEvents.timestamp, startTime),
+              endTime ? lte(analyticsEvents.timestamp, endTime) : sql`true`,
+            ),
+          )
+          .groupBy(analyticsEvents.sessionId)
+          .as("all_sessions"),
+        sql`filtered.session_id = all_sessions.session_id`,
       ),
   ]);
 
@@ -426,7 +450,7 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
   }
 
   const [commonData, previousTotalsRes] = await Promise.all([
-    getCommonAggregations(conditionsCurrent),
+    getCommonAggregations(conditionsCurrent, projectId, startTime, endTime),
     db
       .select({
         totalVisits: sql`count(*)`,

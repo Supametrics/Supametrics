@@ -185,22 +185,26 @@ func GetAnalytics(c *fiber.Ctx) error {
 	summaryQuery := fmt.Sprintf(`
 		SELECT 
 			(SELECT COUNT(*) FROM analytics_events WHERE %s AND event_type = 'pageview') as total_visits,
-			COUNT(DISTINCT visitor_id) as unique_visitors,
-			COUNT(DISTINCT session_id) as total_sessions,
-			COALESCE(SUM(session_duration), 0) as total_duration,
-			COALESCE(AVG(session_duration), 0) as avg_session_duration
+			COUNT(DISTINCT filtered.visitor_id) as unique_visitors,
+			COUNT(DISTINCT filtered.session_id) as total_sessions,
+			COALESCE(SUM(all_sessions.session_duration), 0) as total_duration,
+			COALESCE(AVG(all_sessions.session_duration), 0) as avg_session_duration
 		FROM (
+			SELECT DISTINCT session_id, visitor_id
+			FROM analytics_events 
+			WHERE %s
+		) filtered
+		LEFT JOIN (
 			SELECT 
 				session_id,
-				visitor_id,
 				GREATEST(
 					EXTRACT(EPOCH FROM (MAX(timestamp) - MIN(timestamp))),
 					COALESCE(NULLIF(MAX(duration), 0), 0)
 				) as session_duration
 			FROM analytics_events 
-			WHERE %s
-			GROUP BY session_id, visitor_id
-		) s;
+			WHERE project_id = $1 AND timestamp >= $2 AND timestamp <= $3
+			GROUP BY session_id
+		) all_sessions ON filtered.session_id = all_sessions.session_id;
 	`, whereClause, whereClause)
 
 	var summary AnalyticsSummary
