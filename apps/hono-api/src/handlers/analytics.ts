@@ -103,7 +103,7 @@ function getTimeRange(filter: string) {
 function getPreviousTimeRange(
   filter: string,
   currentStart: Date,
-  currentEnd?: Date
+  currentEnd?: Date,
 ) {
   switch (filter) {
     case "10secs":
@@ -121,14 +121,14 @@ function getPreviousTimeRange(
       return {
         startTime: new Date(currentStart.getTime() - 24 * 60 * 60 * 1000),
         endTime: new Date(
-          (currentEnd || currentStart).getTime() - 24 * 60 * 60 * 1000
+          (currentEnd || currentStart).getTime() - 24 * 60 * 60 * 1000,
         ),
       };
     case "thisweek":
       return {
         startTime: new Date(currentStart.getTime() - 7 * 24 * 60 * 60 * 1000),
         endTime: new Date(
-          (currentEnd || currentStart).getTime() - 7 * 24 * 60 * 60 * 1000
+          (currentEnd || currentStart).getTime() - 7 * 24 * 60 * 60 * 1000,
         ),
       };
     case "thismonth": {
@@ -172,8 +172,8 @@ async function getOnlineVisitors(projectId: string) {
     .where(
       and(
         eq(analyticsEvents.projectId, projectId),
-        gte(analyticsEvents.timestamp, twoMinutesAgo)
-      )
+        gte(analyticsEvents.timestamp, twoMinutesAgo),
+      ),
     );
 
   return Number(result[0]?.onlineVisitors || 0);
@@ -191,7 +191,7 @@ async function getCommonAggregations(conditions: any[]) {
             const alias = String(col.name).split(".").pop()!;
             return { ...acc, [alias]: col };
           },
-          {} as Record<string, any>
+          {} as Record<string, any>,
         ),
       })
       .from(analyticsEvents)
@@ -247,15 +247,15 @@ async function getCommonAggregations(conditions: any[]) {
       .from(
         db
           .select({
-            session_duration:
-              sql`coalesce(nullif(max(${analyticsEvents.duration}), 0), 1)`.as(
-                "session_duration"
-              ),
+            session_duration: sql`GREATEST(
+                EXTRACT(EPOCH FROM (MAX(${analyticsEvents.timestamp}) - MIN(${analyticsEvents.timestamp}))),
+                COALESCE(NULLIF(MAX(${analyticsEvents.duration}), 0), 0)
+              )`.as("session_duration"),
           })
           .from(analyticsEvents)
           .where(and(...conditions))
           .groupBy(analyticsEvents.sessionId)
-          .as("s")
+          .as("s"),
       ),
   ]);
 
@@ -291,7 +291,7 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
         success: false,
         message: "The provided project ID is not a valid UUID",
       },
-      400
+      400,
     );
   }
 
@@ -310,7 +310,7 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
         message: "You do not have access to this project",
         success: false,
       },
-      403
+      403,
     );
   }
 
@@ -319,7 +319,32 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
   const filter = (c.req.query("filter") || "today").toLowerCase();
   const eventType = (c.req.query("eventType") || "pageview").toLowerCase();
   const eventName = c.req.query("eventName"); // Get specific event name from query
-  
+  const frequencyGroupBy = (
+    c.req.query("frequencyGroupBy") || "all"
+  ).toLowerCase();
+
+  const allowedGroupBy = [
+    "all",
+    "browser",
+    "device",
+    "os",
+    "country",
+    "city",
+    "pathname",
+    "referrer",
+  ];
+  if (!allowedGroupBy.includes(frequencyGroupBy)) {
+    return c.json(
+      {
+        error: "Invalid frequencyGroupBy",
+        data: null,
+        message: "The specified groupBy dimension is not valid",
+        success: false,
+      },
+      400,
+    );
+  }
+
   if (!allowedFilters.includes(filter)) {
     return c.json(
       {
@@ -328,7 +353,7 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
         message: "The specified filter is not valid",
         success: false,
       },
-      400
+      400,
     );
   }
 
@@ -340,14 +365,14 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
     gte(analyticsEvents.timestamp, startTime),
   ];
   if (endTime) conditionsCurrent.push(lte(analyticsEvents.timestamp, endTime));
-  
+
   // Filter by event type
   if (eventType === "pageview") {
     conditionsCurrent.push(eq(analyticsEvents.eventType, "pageview"));
   } else if (eventType === "custom") {
     conditionsCurrent.push(sql`${analyticsEvents.eventType} != 'pageview'`);
   }
-  
+
   // Filter by specific event name if provided
   if (eventName) {
     conditionsCurrent.push(eq(analyticsEvents.eventName, eventName));
@@ -358,14 +383,14 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
     gte(analyticsEvents.timestamp, prevRange.startTime),
     lte(analyticsEvents.timestamp, prevRange.endTime),
   ];
-  
+
   // Apply same event type filter to previous period
   if (eventType === "pageview") {
     conditionsPrevious.push(eq(analyticsEvents.eventType, "pageview"));
   } else if (eventType === "custom") {
     conditionsPrevious.push(sql`${analyticsEvents.eventType} != 'pageview'`);
   }
-  
+
   if (eventName) {
     conditionsPrevious.push(eq(analyticsEvents.eventName, eventName));
   }
@@ -390,23 +415,60 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
     val === null ? null : `${val > 0 ? "+" : ""}${val.toFixed(1)}%`;
 
   const totalVisitsChange = formatChange(
-    calcPercentChange(commonData.totalVisits, previousTotals.totalVisits)
+    calcPercentChange(commonData.totalVisits, previousTotals.totalVisits),
   );
   const uniqueVisitorsChange = formatChange(
-    calcPercentChange(commonData.uniqueVisitors, previousTotals.uniqueVisitors)
+    calcPercentChange(commonData.uniqueVisitors, previousTotals.uniqueVisitors),
   ); // frequency: group by time buckets using date_trunc
   // Note: bucketFormat is a string like 'hour', 'day', 'month'
 
-  const frequency = await db
-    .select({
-      time: sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
-      totalVisits: sql`count(*)`,
-      uniqueVisitors: sql`count(distinct ${analyticsEvents.visitorId})`,
-    })
-    .from(analyticsEvents)
-    .where(and(...conditionsCurrent))
-    .groupBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`))
-    .orderBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`));
+  // Map dimension to database column
+  const dimensionColumnMap: Record<string, any> = {
+    browser: analyticsEvents.browserName,
+    device: analyticsEvents.deviceType,
+    os: analyticsEvents.osName,
+    country: analyticsEvents.country,
+    city: analyticsEvents.city,
+    pathname: analyticsEvents.pathname,
+    referrer: analyticsEvents.referrer,
+  };
+
+  let frequency;
+
+  if (frequencyGroupBy === "all") {
+    // Default behavior: group only by time
+    frequency = await db
+      .select({
+        time: sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
+        totalVisits: sql`count(*)`,
+        uniqueVisitors: sql`count(distinct ${analyticsEvents.visitorId})`,
+      })
+      .from(analyticsEvents)
+      .where(and(...conditionsCurrent))
+      .groupBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`))
+      .orderBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`));
+  } else {
+    // Group by time AND dimension
+    const dimensionColumn = dimensionColumnMap[frequencyGroupBy];
+
+    frequency = await db
+      .select({
+        time: sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
+        dimension: dimensionColumn,
+        totalVisits: sql`count(*)`,
+        uniqueVisitors: sql`count(distinct ${analyticsEvents.visitorId})`,
+      })
+      .from(analyticsEvents)
+      .where(and(...conditionsCurrent, isNotNull(dimensionColumn)))
+      .groupBy(
+        sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
+        dimensionColumn,
+      )
+      .orderBy(
+        sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
+        dimensionColumn,
+      );
+  }
 
   let formatOptions: Intl.DateTimeFormatOptions;
 
@@ -437,11 +499,47 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
 
   const formatter = new Intl.DateTimeFormat("en-US", formatOptions);
 
-  const formattedFrequency = frequency.map((item) => ({
-    time: formatter.format(new Date(item.time as string | Date)),
-    totalVisits: Number(item.totalVisits),
-    uniqueVisitors: Number(item.uniqueVisitors),
-  }));
+  let formattedFrequency;
+
+  if (frequencyGroupBy === "all") {
+    // Simple format for non-grouped data
+    formattedFrequency = frequency.map((item: any) => ({
+      time: formatter.format(new Date(item.time as string | Date)),
+      totalVisits: Number(item.totalVisits),
+      uniqueVisitors: Number(item.uniqueVisitors),
+    }));
+  } else {
+    // Format grouped data - structure as array of series
+    const seriesMap = new Map<
+      string,
+      Array<{ time: string; totalVisits: number; uniqueVisitors: number }>
+    >();
+
+    for (const item of frequency as any[]) {
+      const dimensionValue = item.dimension || "Unknown";
+      const timeFormatted = formatter.format(
+        new Date(item.time as string | Date),
+      );
+
+      if (!seriesMap.has(dimensionValue)) {
+        seriesMap.set(dimensionValue, []);
+      }
+
+      seriesMap.get(dimensionValue)!.push({
+        time: timeFormatted,
+        totalVisits: Number(item.totalVisits),
+        uniqueVisitors: Number(item.uniqueVisitors),
+      });
+    }
+
+    // Convert map to array format
+    formattedFrequency = Array.from(seriesMap.entries()).map(
+      ([name, data]) => ({
+        name,
+        data,
+      }),
+    );
+  }
 
   return c.json({
     success: true,
@@ -452,6 +550,7 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
       name: project.name,
       filter,
       eventType,
+      frequencyGroupBy,
       ...(eventName ? { eventName } : {}),
       ...commonData,
       totalVisitsChange,
@@ -476,7 +575,7 @@ analyticsRoutes.get("/:id/events/list", async (c) => {
         success: false,
         message: "The provided project ID is not a valid UUID",
       },
-      400
+      400,
     );
   }
 
@@ -488,12 +587,12 @@ analyticsRoutes.get("/:id/events/list", async (c) => {
         message: "You do not have access to this project",
         success: false,
       },
-      403
+      403,
     );
   }
 
   const sortBy = (c.req.query("sortBy") || "popularity").toLowerCase();
-  
+
   // Get all unique events with their counts
   const events = await db
     .select({
@@ -508,14 +607,14 @@ analyticsRoutes.get("/:id/events/list", async (c) => {
     .where(
       and(
         eq(analyticsEvents.projectId, projectId),
-        isNotNull(analyticsEvents.eventName)
-      )
+        isNotNull(analyticsEvents.eventName),
+      ),
     )
     .groupBy(analyticsEvents.eventType, analyticsEvents.eventName)
     .orderBy(
       sortBy === "recent"
         ? desc(sql`max(${analyticsEvents.timestamp})`)
-        : desc(sql`count(*)`)
+        : desc(sql`count(*)`),
     )
     .limit(100);
 

@@ -98,6 +98,21 @@ func GetAnalytics(c *fiber.Ctx) error {
 	filter := c.Query("filter", "today")
 	eventType := c.Query("eventType", "pageview")
 	eventName := c.Query("eventName")
+	frequencyGroupBy := c.Query("frequencyGroupBy", "all")
+
+	allowedGroupBy := []string{"all", "browser", "device", "os", "country", "city", "pathname", "referrer"}
+	isValidGroupBy := false
+	for _, g := range allowedGroupBy {
+		if g == frequencyGroupBy {
+			isValidGroupBy = true
+			break
+		}
+	}
+	if !isValidGroupBy {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid frequencyGroupBy provided",
+		})
+	}
 
 	isValidFilter := false
 	for _, f := range allowedFilters {
@@ -147,9 +162,9 @@ func GetAnalytics(c *fiber.Ctx) error {
 			SELECT 
 				session_id,
 				visitor_id,
-				COALESCE(
-					NULLIF(MAX(duration), 0),
-					EXTRACT(EPOCH FROM (MAX(timestamp) - MIN(timestamp)))
+				GREATEST(
+					EXTRACT(EPOCH FROM (MAX(timestamp) - MIN(timestamp))),
+					COALESCE(NULLIF(MAX(duration), 0), 0)
 				) as session_duration
 			FROM analytics_events 
 			WHERE %s
@@ -181,27 +196,128 @@ func GetAnalytics(c *fiber.Ctx) error {
 		ORDER BY time_bucket;
 	`, bucketFormat, whereClause)
 
-	rows, err := db.DB.Query(frequencyQuery, queryArgs...)
+	// Map dimension to database column
+	dimensionColumnMap := map[string]string{
+		"browser":  "browser_name",
+		"device":   "device_type",
+		"os":       "os_name",
+		"country":  "country",
+		"city":     "city",
+		"pathname": "pathname",
+		"referrer": "referrer",
+	}
+
+	var rows *sql.Rows
+	var err error
+
+	if frequencyGroupBy == "all" {
+		// Default behavior: group only by time
+		rows, err = db.DB.Query(frequencyQuery, queryArgs...)
+	} else {
+		// Group by time AND dimension
+		dimensionColumn := dimensionColumnMap[frequencyGroupBy]
+		frequencyQueryGrouped := fmt.Sprintf(`
+			SELECT 
+				date_trunc('%s', timestamp) AS time_bucket,
+				%s AS dimension,
+				COUNT(CASE WHEN event_type = 'pageview' THEN 1 END) AS total_visits,
+				COUNT(DISTINCT visitor_id) AS unique_visitors
+			FROM analytics_events 
+			WHERE %s AND %s IS NOT NULL
+			GROUP BY time_bucket, dimension
+			ORDER BY time_bucket, dimension;
+		`, bucketFormat, dimensionColumn, whereClause, dimensionColumn)
+		
+		rows, err = db.DB.Query(frequencyQueryGrouped, queryArgs...)
+	}
+
 	if err != nil {
 		log.Println("Analytics frequency query error:", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Database error fetching frequency"})
 	}
 	defer rows.Close()
 
-	var frequencyData []FrequencyData
+	type FrequencyPoint struct {
+		Time           time.Time `json:"time"`
+		Dimension      *string   `json:"dimension,omitempty"`
+		TotalVisits    int       `json:"totalVisits"`
+		UniqueVisitors int       `json:"uniqueVisitors"`
+	}
+
+	var frequencyPoints []FrequencyPoint
 	for rows.Next() {
-		var fd FrequencyData
-		if err := rows.Scan(&fd.Time, &fd.TotalVisits, &fd.UniqueVisitors); err != nil {
-			log.Println("Error scanning frequency row:", err)
-			continue
+		var fp FrequencyPoint
+		if frequencyGroupBy == "all" {
+			if err := rows.Scan(&fp.Time, &fp.TotalVisits, &fp.UniqueVisitors); err != nil {
+				log.Println("Error scanning frequency row:", err)
+				continue
+			}
+		} else {
+			if err := rows.Scan(&fp.Time, &fp.Dimension, &fp.TotalVisits, &fp.UniqueVisitors); err != nil {
+				log.Println("Error scanning frequency row:", err)
+				continue
+			}
 		}
-		frequencyData = append(frequencyData, fd)
+		frequencyPoints = append(frequencyPoints, fp)
+	}
+
+	// Format the response based on groupBy
+	var frequencyData interface{}
+	
+	if frequencyGroupBy == "all" {
+		// Simple array format
+		formattedFrequency := make([]FrequencyData, 0, len(frequencyPoints))
+		for _, fp := range frequencyPoints {
+			formattedFrequency = append(formattedFrequency, FrequencyData{
+				Time:           fp.Time,
+				TotalVisits:    fp.TotalVisits,
+				UniqueVisitors: fp.UniqueVisitors,
+			})
+		}
+		frequencyData = formattedFrequency
+	} else {
+		// Grouped series format
+		seriesMap := make(map[string][]FrequencyData)
+		
+		for _, fp := range frequencyPoints {
+			dimensionValue := "Unknown"
+			if fp.Dimension != nil {
+				dimensionValue = *fp.Dimension
+			}
+			
+			if _, exists := seriesMap[dimensionValue]; !exists {
+				seriesMap[dimensionValue] = []FrequencyData{}
+			}
+			
+			seriesMap[dimensionValue] = append(seriesMap[dimensionValue], FrequencyData{
+				Time:           fp.Time,
+				TotalVisits:    fp.TotalVisits,
+				UniqueVisitors: fp.UniqueVisitors,
+			})
+		}
+		
+		// Convert map to array of series
+		type Series struct {
+			Name string          `json:"name"`
+			Data []FrequencyData `json:"data"`
+		}
+		
+		series := make([]Series, 0, len(seriesMap))
+		for name, data := range seriesMap {
+			series = append(series, Series{
+				Name: name,
+				Data: data,
+			})
+		}
+		
+		frequencyData = series
 	}
 
 	responseData := fiber.Map{
 		"projectId":           projectID,
 		"filter":              filter,
 		"eventType":           eventType,
+		"frequencyGroupBy":    frequencyGroupBy,
 		"totalVisits":         summary.TotalVisits,
 		"uniqueVisitors":      summary.UniqueVisitors,
 		"totalSessions":       summary.TotalSessions,
