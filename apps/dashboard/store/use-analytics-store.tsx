@@ -2,27 +2,32 @@ import { create } from "zustand";
 
 import type { Timerange } from "@repo/ui/types";
 
-export type FrequencyFilterDimension =
-  | "all"
-  | "browser"
-  | "device"
-  | "os"
-  | "country"
-  | "city"
-  | "pathname"
-  | "referrer";
+export type FilterDimension = {
+  browser?: string;
+  device?: string;
+  os?: string;
+  country?: string;
+  city?: string;
+  pathname?: string;
+  referrer?: string;
+};
 
 interface AnalyticsStore {
   filter: Timerange;
   from?: string;
   to?: string;
   selectedEvent: string; // Format: "pageview" | "custom:all" | "custom:eventName"
-  frequencyFilter: FrequencyFilterDimension; // Dimension to filter frequency chart by
+  activeFilters: FilterDimension; // Global filters applied to all analytics
 
   setFilter: (filter: Timerange) => void;
   setRange: (from: string, to: string) => void;
   setSelectedEvent: (value: string) => void;
-  setFrequencyFilter: (dimension: FrequencyFilterDimension) => void;
+  setDimensionFilter: (
+    dimension: keyof FilterDimension,
+    value: string | undefined,
+  ) => void;
+  clearFilters: () => void;
+  clearFilter: (dimension: keyof FilterDimension) => void;
 }
 
 export const useAnalyticsStore = create<AnalyticsStore>((set) => ({
@@ -30,10 +35,26 @@ export const useAnalyticsStore = create<AnalyticsStore>((set) => ({
   from: undefined,
   to: undefined,
   selectedEvent: "pageview", // Default to page views
-  frequencyFilter: "all", // Default to no filtering
+  activeFilters: {},
 
   setFilter: (filter) => set({ filter }),
   setRange: (from, to) => set({ from, to }),
   setSelectedEvent: (selectedEvent) => set({ selectedEvent }),
-  setFrequencyFilter: (frequencyFilter) => set({ frequencyFilter }),
+
+  setDimensionFilter: (dimension, value) =>
+    set((state) => ({
+      activeFilters: {
+        ...state.activeFilters,
+        [dimension]: value,
+      },
+    })),
+
+  clearFilters: () => set({ activeFilters: {} }),
+
+  clearFilter: (dimension) =>
+    set((state) => {
+      const newFilters = { ...state.activeFilters };
+      delete newFilters[dimension];
+      return { activeFilters: newFilters };
+    }),
 }));

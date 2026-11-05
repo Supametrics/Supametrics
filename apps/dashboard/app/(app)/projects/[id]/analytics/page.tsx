@@ -11,6 +11,7 @@ import { cleanUrl, formatDuration } from "@repo/ui/lib/utils";
 import { Error } from "@/components/error";
 import { UnifiedEventSelector } from "./components/unified-event-selector";
 import { useAnalyticsStore } from "@/store/use-analytics-store";
+import { ActiveFilters } from "./components/active-filters";
 
 export default function ProjectAnalyticsPage({
   params,
@@ -59,6 +60,9 @@ export default function ProjectAnalyticsPage({
           />
         </div>
 
+        {/* Active Filters */}
+        <ActiveFilters />
+
         <MetricsGrid>
           <StatCard
             title={labels.visits}
@@ -100,6 +104,7 @@ export default function ProjectAnalyticsPage({
         <Grid columns={2} gap="gap-2" gapSm="gap-4" gapMd="gap-6" gapLg="gap-8">
           <SummaryCard
             title="Browsers"
+            dimension="browser"
             loading={isLoading}
             data={
               data?.browserSummary?.map((b) => ({
@@ -110,6 +115,7 @@ export default function ProjectAnalyticsPage({
           />
           <SummaryCard
             title="Devices"
+            dimension="device"
             loading={isLoading}
             data={
               data?.deviceSummary?.map((d) => ({
@@ -123,6 +129,7 @@ export default function ProjectAnalyticsPage({
         <Grid columns={2} gap="gap-2" gapSm="gap-4" gapMd="gap-6" gapLg="gap-8">
           <SummaryCard
             title="OS"
+            dimension="os"
             loading={isLoading}
             data={
               data?.osSummary?.map((o) => ({
@@ -133,6 +140,7 @@ export default function ProjectAnalyticsPage({
           />
           <SummaryCard
             title="Top Referrers"
+            dimension="referrer"
             loading={isLoading}
             data={
               data?.topReferrers?.map((r) => ({
@@ -146,6 +154,7 @@ export default function ProjectAnalyticsPage({
         <Grid columns={3} gap="gap-2" gapSm="gap-4" gapMd="gap-6" gapLg="gap-8">
           <SummaryCard
             title="Top Countries"
+            dimension="country"
             loading={isLoading}
             data={
               data?.topCountries?.map((o) => ({
@@ -156,6 +165,7 @@ export default function ProjectAnalyticsPage({
           />
           <SummaryCard
             title="Top Cities"
+            dimension="city"
             loading={isLoading}
             data={
               data?.topCities?.map((r) => ({
@@ -189,6 +199,7 @@ export default function ProjectAnalyticsPage({
           />
           <SummaryCard
             title="Top Paths"
+            dimension="pathname"
             loading={isLoading}
             data={
               data?.topPaths?.map((p) => ({

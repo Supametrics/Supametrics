@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAnalyticsStore } from "@/store/use-analytics-store";
 
 export const useAnalytics = (projectId: string) => {
-  const { filter, from, to, selectedEvent, frequencyFilter } =
+  const { filter, from, to, selectedEvent, activeFilters } =
     useAnalyticsStore();
 
   const { data, isLoading, error } = useQuery<Analytics>({
@@ -15,12 +15,11 @@ export const useAnalytics = (projectId: string) => {
       from,
       to,
       selectedEvent,
-      frequencyFilter,
+      activeFilters,
     ],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append("filter", filter);
-      params.append("frequencyGroupBy", frequencyFilter);
 
       // Parse selectedEvent to determine eventType and eventName
       if (selectedEvent === "pageview") {
@@ -32,6 +31,19 @@ export const useAnalytics = (projectId: string) => {
         params.append("eventType", "custom");
         params.append("eventName", eventName);
       }
+
+      // Add dimension filters
+      if (activeFilters.browser)
+        params.append("browser", activeFilters.browser);
+      if (activeFilters.device) params.append("device", activeFilters.device);
+      if (activeFilters.os) params.append("os", activeFilters.os);
+      if (activeFilters.country)
+        params.append("country", activeFilters.country);
+      if (activeFilters.city) params.append("city", activeFilters.city);
+      if (activeFilters.pathname)
+        params.append("pathname", activeFilters.pathname);
+      if (activeFilters.referrer)
+        params.append("referrer", activeFilters.referrer);
 
       if (from && to) {
         params.append("from", from);

@@ -319,31 +319,15 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
   const filter = (c.req.query("filter") || "today").toLowerCase();
   const eventType = (c.req.query("eventType") || "pageview").toLowerCase();
   const eventName = c.req.query("eventName"); // Get specific event name from query
-  const frequencyGroupBy = (
-    c.req.query("frequencyGroupBy") || "all"
-  ).toLowerCase();
 
-  const allowedGroupBy = [
-    "all",
-    "browser",
-    "device",
-    "os",
-    "country",
-    "city",
-    "pathname",
-    "referrer",
-  ];
-  if (!allowedGroupBy.includes(frequencyGroupBy)) {
-    return c.json(
-      {
-        error: "Invalid frequencyGroupBy",
-        data: null,
-        message: "The specified groupBy dimension is not valid",
-        success: false,
-      },
-      400,
-    );
-  }
+  // Get dimension filters
+  const browserFilter = c.req.query("browser");
+  const deviceFilter = c.req.query("device");
+  const osFilter = c.req.query("os");
+  const countryFilter = c.req.query("country");
+  const cityFilter = c.req.query("city");
+  const pathnameFilter = c.req.query("pathname");
+  const referrerFilter = c.req.query("referrer");
 
   if (!allowedFilters.includes(filter)) {
     return c.json(
@@ -378,6 +362,29 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
     conditionsCurrent.push(eq(analyticsEvents.eventName, eventName));
   }
 
+  // Apply dimension filters
+  if (browserFilter) {
+    conditionsCurrent.push(eq(analyticsEvents.browserName, browserFilter));
+  }
+  if (deviceFilter) {
+    conditionsCurrent.push(eq(analyticsEvents.deviceType, deviceFilter));
+  }
+  if (osFilter) {
+    conditionsCurrent.push(eq(analyticsEvents.osName, osFilter));
+  }
+  if (countryFilter) {
+    conditionsCurrent.push(eq(analyticsEvents.country, countryFilter));
+  }
+  if (cityFilter) {
+    conditionsCurrent.push(eq(analyticsEvents.city, cityFilter));
+  }
+  if (pathnameFilter) {
+    conditionsCurrent.push(eq(analyticsEvents.pathname, pathnameFilter));
+  }
+  if (referrerFilter) {
+    conditionsCurrent.push(eq(analyticsEvents.referrer, referrerFilter));
+  }
+
   const conditionsPrevious: any[] = [
     eq(analyticsEvents.projectId, projectId),
     gte(analyticsEvents.timestamp, prevRange.startTime),
@@ -393,6 +400,29 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
 
   if (eventName) {
     conditionsPrevious.push(eq(analyticsEvents.eventName, eventName));
+  }
+
+  // Apply same dimension filters to previous period
+  if (browserFilter) {
+    conditionsPrevious.push(eq(analyticsEvents.browserName, browserFilter));
+  }
+  if (deviceFilter) {
+    conditionsPrevious.push(eq(analyticsEvents.deviceType, deviceFilter));
+  }
+  if (osFilter) {
+    conditionsPrevious.push(eq(analyticsEvents.osName, osFilter));
+  }
+  if (countryFilter) {
+    conditionsPrevious.push(eq(analyticsEvents.country, countryFilter));
+  }
+  if (cityFilter) {
+    conditionsPrevious.push(eq(analyticsEvents.city, cityFilter));
+  }
+  if (pathnameFilter) {
+    conditionsPrevious.push(eq(analyticsEvents.pathname, pathnameFilter));
+  }
+  if (referrerFilter) {
+    conditionsPrevious.push(eq(analyticsEvents.referrer, referrerFilter));
   }
 
   const [commonData, previousTotalsRes] = await Promise.all([
@@ -422,53 +452,16 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
   ); // frequency: group by time buckets using date_trunc
   // Note: bucketFormat is a string like 'hour', 'day', 'month'
 
-  // Map dimension to database column
-  const dimensionColumnMap: Record<string, any> = {
-    browser: analyticsEvents.browserName,
-    device: analyticsEvents.deviceType,
-    os: analyticsEvents.osName,
-    country: analyticsEvents.country,
-    city: analyticsEvents.city,
-    pathname: analyticsEvents.pathname,
-    referrer: analyticsEvents.referrer,
-  };
-
-  let frequency;
-
-  if (frequencyGroupBy === "all") {
-    // Default behavior: group only by time
-    frequency = await db
-      .select({
-        time: sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
-        totalVisits: sql`count(*)`,
-        uniqueVisitors: sql`count(distinct ${analyticsEvents.visitorId})`,
-      })
-      .from(analyticsEvents)
-      .where(and(...conditionsCurrent))
-      .groupBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`))
-      .orderBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`));
-  } else {
-    // Group by time AND dimension
-    const dimensionColumn = dimensionColumnMap[frequencyGroupBy];
-
-    frequency = await db
-      .select({
-        time: sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
-        dimension: dimensionColumn,
-        totalVisits: sql`count(*)`,
-        uniqueVisitors: sql`count(distinct ${analyticsEvents.visitorId})`,
-      })
-      .from(analyticsEvents)
-      .where(and(...conditionsCurrent, isNotNull(dimensionColumn)))
-      .groupBy(
-        sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
-        dimensionColumn,
-      )
-      .orderBy(
-        sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
-        dimensionColumn,
-      );
-  }
+  const frequency = await db
+    .select({
+      time: sql.raw(`date_trunc('${bucketFormat}', "timestamp")`),
+      totalVisits: sql`count(*)`,
+      uniqueVisitors: sql`count(distinct ${analyticsEvents.visitorId})`,
+    })
+    .from(analyticsEvents)
+    .where(and(...conditionsCurrent))
+    .groupBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`))
+    .orderBy(sql.raw(`date_trunc('${bucketFormat}', "timestamp")`));
 
   let formatOptions: Intl.DateTimeFormatOptions;
 
@@ -499,47 +492,11 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
 
   const formatter = new Intl.DateTimeFormat("en-US", formatOptions);
 
-  let formattedFrequency;
-
-  if (frequencyGroupBy === "all") {
-    // Simple format for non-grouped data
-    formattedFrequency = frequency.map((item: any) => ({
-      time: formatter.format(new Date(item.time as string | Date)),
-      totalVisits: Number(item.totalVisits),
-      uniqueVisitors: Number(item.uniqueVisitors),
-    }));
-  } else {
-    // Format grouped data - structure as array of series
-    const seriesMap = new Map<
-      string,
-      Array<{ time: string; totalVisits: number; uniqueVisitors: number }>
-    >();
-
-    for (const item of frequency as any[]) {
-      const dimensionValue = item.dimension || "Unknown";
-      const timeFormatted = formatter.format(
-        new Date(item.time as string | Date),
-      );
-
-      if (!seriesMap.has(dimensionValue)) {
-        seriesMap.set(dimensionValue, []);
-      }
-
-      seriesMap.get(dimensionValue)!.push({
-        time: timeFormatted,
-        totalVisits: Number(item.totalVisits),
-        uniqueVisitors: Number(item.uniqueVisitors),
-      });
-    }
-
-    // Convert map to array format
-    formattedFrequency = Array.from(seriesMap.entries()).map(
-      ([name, data]) => ({
-        name,
-        data,
-      }),
-    );
-  }
+  const formattedFrequency = frequency.map((item: any) => ({
+    time: formatter.format(new Date(item.time as string | Date)),
+    totalVisits: Number(item.totalVisits),
+    uniqueVisitors: Number(item.uniqueVisitors),
+  }));
 
   return c.json({
     success: true,
@@ -550,7 +507,6 @@ async function fetchAnalytics(c: Context<{ Variables: AuthType }>) {
       name: project.name,
       filter,
       eventType,
-      frequencyGroupBy,
       ...(eventName ? { eventName } : {}),
       ...commonData,
       totalVisitsChange,

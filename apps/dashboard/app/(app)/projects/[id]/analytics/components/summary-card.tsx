@@ -5,6 +5,10 @@ import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { cn } from "@repo/ui/lib/utils";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import ReactCountryFlag from "react-country-flag";
+import {
+  useAnalyticsStore,
+  type FilterDimension,
+} from "@/store/use-analytics-store";
 
 export type SummaryItem = {
   label: string;
@@ -17,6 +21,7 @@ type SummaryCardProps = {
   className?: string;
   maxVisible?: number;
   loading: boolean;
+  dimension?: keyof FilterDimension; // Which dimension this card represents
 };
 
 export const SummaryCard = ({
@@ -25,12 +30,31 @@ export const SummaryCard = ({
   className,
   maxVisible = 2,
   loading,
+  dimension,
 }: SummaryCardProps) => {
   const [showAll, setShowAll] = useState(false);
+  const { setDimensionFilter, activeFilters } = useAnalyticsStore();
+
   const totalCount = data.reduce((sum, item) => sum + item.count, 0) || 1;
   const visibleData = showAll ? data : data.slice(0, maxVisible);
 
   const isCountryCode = (label: string) => /^[A-Z]{2}$/i.test(label.trim()); // Detect if it's 2-letter country code
+
+  const handleItemClick = (label: string) => {
+    if (!dimension || label === "Unknown") return;
+
+    // Toggle filter: if same value is clicked, remove it; otherwise set it
+    const currentValue = activeFilters[dimension];
+    if (currentValue === label) {
+      setDimensionFilter(dimension, undefined);
+    } else {
+      setDimensionFilter(dimension, label);
+    }
+  };
+
+  const isActive = (label: string) => {
+    return dimension && activeFilters[dimension] === label;
+  };
 
   const renderLabel = (label: string) => {
     if (isCountryCode(label)) {
@@ -54,24 +78,47 @@ export const SummaryCard = ({
 
   const renderBar = (item: SummaryItem, height: number = 28) => {
     const percentage = (item.count / totalCount) * 100;
+    const active = isActive(item.label);
+    const clickable = dimension && item.label !== "Unknown";
 
     return (
-      <div className="relative mb-2">
+      <div
+        className={cn("relative mb-2", clickable && "cursor-pointer group")}
+        onClick={() => handleItemClick(item.label)}
+      >
         <div
-          className="w-full overflow-hidden rounded-sm bg-main/10"
+          className={cn(
+            "w-full overflow-hidden rounded-sm",
+            active ? "bg-main/30" : "bg-main/10",
+            clickable && "group-hover:bg-main/20 transition-colors",
+          )}
           style={{ height: `${height}px` }}
         >
           <div
-            className="relative flex h-full items-center rounded-sm bg-main/65 px-2"
+            className={cn(
+              "relative flex h-full items-center rounded-sm px-2",
+              active ? "bg-main" : "bg-main/65",
+              clickable && "group-hover:bg-main/80 transition-colors",
+            )}
             style={{ width: `${percentage}%` }}
           >
-            <p className="absolute left-2 z-10 whitespace-nowrap text-xs font-medium text-primary">
+            <p
+              className={cn(
+                "absolute left-2 z-10 whitespace-nowrap text-xs font-medium",
+                active ? "text-white" : "text-primary",
+              )}
+            >
               {renderLabel(item.label)}
             </p>
           </div>
         </div>
 
-        <div className="absolute right-2 top-0 z-20 flex h-full items-center text-xs font-medium text-gray-900 dark:text-white">
+        <div
+          className={cn(
+            "absolute right-2 top-0 z-20 flex h-full items-center text-xs font-medium",
+            active ? "text-main" : "text-gray-900 dark:text-white",
+          )}
+        >
           {item.count.toLocaleString()}
         </div>
       </div>
